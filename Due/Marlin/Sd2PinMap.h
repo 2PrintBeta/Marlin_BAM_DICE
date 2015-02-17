@@ -27,12 +27,11 @@
 
 //#include <Arduino.h>
 
-//Note: use hardware SPI only, soft SPI not supported
-uint8_t const SS_PIN = SS;
-uint8_t const MOSI_PIN = MOSI;
-uint8_t const MISO_PIN = MISO;
-uint8_t const SCK_PIN = SCK;
-
+//Note: only  soft SPI supported
+uint8_t const SS_PIN = 53;
+uint8_t const MOSI_PIN = 51;
+uint8_t const MISO_PIN = 50;
+uint8_t const SCK_PIN = 52;
 
 #elif defined(ARDUINO_ARCH_AVR) // Other AVR based Boards follows
 
@@ -366,6 +365,7 @@ static inline __attribute__((always_inline))
     return badPinNumber();
   }
 }
+
 static inline __attribute__((always_inline))
   void fastDigitalWrite(uint8_t pin, uint8_t value) {
   if (__builtin_constant_p(pin) && pin < digitalPinCount) {

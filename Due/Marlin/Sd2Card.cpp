@@ -18,10 +18,20 @@
  * <http://www.gnu.org/licenses/>.
  */
 #include "Marlin.h"
-
 #ifdef SDSUPPORT
 #include "Sd2Card.h"
+#include "Sd2PinMap.h"
 //------------------------------------------------------------------------------
+
+inline void digitalWriteDirect(int pin, boolean val){
+  if(val) g_APinDescription[pin].pPort -> PIO_SODR = g_APinDescription[pin].ulPin;
+  else    g_APinDescription[pin].pPort -> PIO_CODR = g_APinDescription[pin].ulPin;
+}
+
+inline int digitalReadDirect(int pin){
+  return !!(g_APinDescription[pin].pPort -> PIO_PDSR & g_APinDescription[pin].ulPin);
+}
+
 
 //------------------------------------------------------------------------------
 #ifndef SOFTWARE_SPI
@@ -153,25 +163,31 @@ static inline __attribute__((always_inline))
 #define nop asm volatile ("nop\n\t")
 //------------------------------------------------------------------------------
 /** Soft SPI receive byte */
+ // Temporary replaced fastdigitalRead/ Write as there is no currently no fast IO on Arduino DUE
 static uint8_t spiRec() {
   uint8_t data = 0;
   // no interrupts during byte receive - about 8 us
   cli();
   // output pin high - like sending 0XFF
-  fastDigitalWrite(SPI_MOSI_PIN, HIGH);
-
+ // Temporary replaced as there is no currently no fast IO on Arduino DUE
+ // fastDigitalWrite(SPI_MOSI_PIN, HIGH);
+   digitalWriteDirect(SPI_MOSI_PIN, HIGH);
+ 
   for (uint8_t i = 0; i < 8; i++) {
-    fastDigitalWrite(SPI_SCK_PIN, HIGH);
+    //fastDigitalWrite(SPI_SCK_PIN, HIGH);
+     digitalWriteDirect(SPI_SCK_PIN, HIGH);
 
     // adjust so SCK is nice
     nop;
     nop;
-
+    
     data <<= 1;
 
-    if (fastDigitalRead(SPI_MISO_PIN)) data |= 1;
+    // if (fastDigitalRead(SPI_MISO_PIN)) data |= 1;
+    if (digitalReadDirect(SPI_MISO_PIN)) data |= 1; 
 
-    fastDigitalWrite(SPI_SCK_PIN, LOW);
+   //  fastDigitalWrite(SPI_SCK_PIN, LOW);
+    digitalWriteDirect(SPI_SCK_PIN, LOW);
   }
   // enable interrupts
   sei();
@@ -190,21 +206,25 @@ static void spiSend(uint8_t data) {
   // no interrupts during byte send - about 8 us
   cli();
   for (uint8_t i = 0; i < 8; i++) {
-    fastDigitalWrite(SPI_SCK_PIN, LOW);
+   // fastDigitalWrite(SPI_SCK_PIN, LOW);
+     digitalWriteDirect(SPI_SCK_PIN, LOW);
 
-    fastDigitalWrite(SPI_MOSI_PIN, data & 0X80);
-
+    //fastDigitalWrite(SPI_MOSI_PIN, data & 0X80);
+    digitalWriteDirect(SPI_MOSI_PIN, data & 0X80);
+  
     data <<= 1;
 
-    fastDigitalWrite(SPI_SCK_PIN, HIGH);
+    //fastDigitalWrite(SPI_SCK_PIN, HIGH);
+    digitalWrite(SPI_SCK_PIN, HIGH);
   }
   // hold SCK high for a few ns
   nop;
   nop;
   nop;
   nop;
-
-  fastDigitalWrite(SPI_SCK_PIN, LOW);
+    
+ // fastDigitalWrite(SPI_SCK_PIN, LOW);
+ digitalWrite(SPI_SCK_PIN, LOW);
   // enable interrupts
   sei();
 }
@@ -648,7 +668,8 @@ bool Sd2Card::setSckRate(uint8_t sckRateID) {
     return false;
   }
 #endif
-  spiSetSckRate (sckRateID);
+  // Temporary disabled - as we use Software SPI
+  // spiSetSckRate (sckRateID);
   spiRate_ = sckRateID;
 
   return true;
