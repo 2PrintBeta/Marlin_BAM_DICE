@@ -265,11 +265,11 @@ FORCE_INLINE unsigned long calc_timer(unsigned long step_rate) {
   unsigned long timer;
   if(step_rate > MAX_STEP_FREQUENCY) step_rate = MAX_STEP_FREQUENCY;
 
-  if(step_rate > 20000) { // If steprate > 20kHz >> step 4 times
+  if(step_rate > STEP_FREQUENCY_QUARTER) { // If steprate > 20kHz >> step 4 times
     step_rate = (step_rate >> 2);
     step_loops = 4;
   }
-  else if(step_rate > 10000) { // If steprate > 10kHz >> step 2 times
+  else if(step_rate > STEP_FREQUENCY_HALF) { // If steprate > 10kHz >> step 2 times
     step_rate = (step_rate >> 1);
     step_loops = 2;
   }
