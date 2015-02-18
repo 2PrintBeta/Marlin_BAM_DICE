@@ -257,7 +257,11 @@ void step_wait(){
 }
 
 
-FORCE_INLINE unsigned long calc_timer(unsigned short step_rate) {
+FORCE_INLINE unsigned long calc_timer(unsigned long step_rate) {
+  
+ //  SERIAL_ECHOPGM("calc timer: ");
+ //  SERIAL_ECHOLN(step_rate);
+  
   unsigned long timer;
   if(step_rate > MAX_STEP_FREQUENCY) step_rate = MAX_STEP_FREQUENCY;
 
@@ -317,9 +321,6 @@ FORCE_INLINE void trapezoid_generator_reset() {
   acceleration_time = calc_timer(acc_step_rate);
   HAL_timer_set_count (STEP_TIMER_NUM, acceleration_time);
 
-//    SERIAL_ECHO_START;
-//    SERIAL_ECHOPGM("advance :");
-//    SERIAL_ECHO(current_block->advance/256.0);
 //    SERIAL_ECHOPGM("advance rate :");
 //    SERIAL_ECHO(current_block->advance_rate/256.0);
 //    SERIAL_ECHOPGM("initial advance :");
