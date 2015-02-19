@@ -19,6 +19,7 @@ The following shields are supported on Arduino Due:
 * RADDS
 * RAMPS-FD v1 (todo) 
 * RAMPS-FD v2 
+* BAM&DICE Due
 
 Current Status 
 --------------
@@ -63,6 +64,7 @@ Arduino Due
 	- LCD Panel adapter 
 	  - Reprap discount LCD controller
 	  - Reprap discount graphic controller
+- BAM&DICE Due
 
 Quick Information
 ===================
