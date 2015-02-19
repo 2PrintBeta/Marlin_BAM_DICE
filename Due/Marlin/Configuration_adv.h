@@ -220,9 +220,9 @@
 
 #define AXIS_RELATIVE_MODES {false, false, false, false}
 
-#define MAX_STEP_FREQUENCY (100000) // Max step frequency for Ultimaker (5000 pps / half step)
-#define STEP_FREQUENCY_QUARTER (50000)
-#define STEP_FREQUENCY_HALF (25000)
+#define MAX_STEP_FREQUENCY (80000) // Max step frequency for Ultimaker (5000 pps / half step)
+#define STEP_FREQUENCY_QUARTER (40000)
+#define STEP_FREQUENCY_HALF (20000)
 
 //By default pololu step drivers require an active high signal. However, some high power drivers require an active low signal as step.
 #define INVERT_X_STEP_PIN false
