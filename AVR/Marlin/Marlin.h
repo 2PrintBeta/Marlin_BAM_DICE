@@ -111,10 +111,11 @@ void process_commands();
 void manage_inactivity(bool ignore_stepper_queue=false);
 
 #if defined(DUAL_X_CARRIAGE) && defined(X_ENABLE_PIN) && X_ENABLE_PIN > -1 \
-    && defined(X2_ENABLE_PIN) && X2_ENABLE_PIN > -1
+    && defined(X2_ENABLE_PIN) && X2_ENABLE_PIN > -1 \
+	&& !defined(X_IS_TMC) 
   #define  enable_x() do { WRITE(X_ENABLE_PIN, X_ENABLE_ON); WRITE(X2_ENABLE_PIN, X_ENABLE_ON); } while (0)
   #define disable_x() do { WRITE(X_ENABLE_PIN,!X_ENABLE_ON); WRITE(X2_ENABLE_PIN,!X_ENABLE_ON); axis_known_position[X_AXIS] = false; } while (0)
-#elif defined(X_ENABLE_PIN) && X_ENABLE_PIN > -1
+#elif defined(X_ENABLE_PIN) && X_ENABLE_PIN > -1 && !defined(X_IS_TMC) 
   #define  enable_x() WRITE(X_ENABLE_PIN, X_ENABLE_ON)
   #define disable_x() { WRITE(X_ENABLE_PIN,!X_ENABLE_ON); axis_known_position[X_AXIS] = false; }
 #else
@@ -122,7 +123,7 @@ void manage_inactivity(bool ignore_stepper_queue=false);
   #define disable_x() ;
 #endif
 
-#if defined(Y_ENABLE_PIN) && Y_ENABLE_PIN > -1
+#if defined(Y_ENABLE_PIN) && Y_ENABLE_PIN > -1 && !defined(Y_IS_TMC) 
   #ifdef Y_DUAL_STEPPER_DRIVERS
     #define  enable_y() { WRITE(Y_ENABLE_PIN, Y_ENABLE_ON); WRITE(Y2_ENABLE_PIN,  Y_ENABLE_ON); }
     #define disable_y() { WRITE(Y_ENABLE_PIN,!Y_ENABLE_ON); WRITE(Y2_ENABLE_PIN, !Y_ENABLE_ON); axis_known_position[Y_AXIS] = false; }
@@ -135,7 +136,7 @@ void manage_inactivity(bool ignore_stepper_queue=false);
   #define disable_y() ;
 #endif
 
-#if defined(Z_ENABLE_PIN) && Z_ENABLE_PIN > -1
+#if defined(Z_ENABLE_PIN) && Z_ENABLE_PIN > -1 && !defined(Z_IS_TMC) 
   #ifdef Z_DUAL_STEPPER_DRIVERS
     #define  enable_z() { WRITE(Z_ENABLE_PIN, Z_ENABLE_ON); WRITE(Z2_ENABLE_PIN, Z_ENABLE_ON); }
     #define disable_z() { WRITE(Z_ENABLE_PIN,!Z_ENABLE_ON); WRITE(Z2_ENABLE_PIN,!Z_ENABLE_ON); axis_known_position[Z_AXIS] = false; }
@@ -148,7 +149,7 @@ void manage_inactivity(bool ignore_stepper_queue=false);
   #define disable_z() ;
 #endif
 
-#if defined(E0_ENABLE_PIN) && (E0_ENABLE_PIN > -1)
+#if defined(E0_ENABLE_PIN) && (E0_ENABLE_PIN > -1) && !defined(E0_IS_TMC) 
   #define enable_e0() WRITE(E0_ENABLE_PIN, E_ENABLE_ON)
   #define disable_e0() WRITE(E0_ENABLE_PIN,!E_ENABLE_ON)
 #else
@@ -156,7 +157,7 @@ void manage_inactivity(bool ignore_stepper_queue=false);
   #define disable_e0() /* nothing */
 #endif
 
-#if (EXTRUDERS > 1) && defined(E1_ENABLE_PIN) && (E1_ENABLE_PIN > -1)
+#if (EXTRUDERS > 1) && defined(E1_ENABLE_PIN) && (E1_ENABLE_PIN > -1) && !defined(E1_IS_TMC) 
   #define enable_e1() WRITE(E1_ENABLE_PIN, E_ENABLE_ON)
   #define disable_e1() WRITE(E1_ENABLE_PIN,!E_ENABLE_ON)
 #else
@@ -164,7 +165,7 @@ void manage_inactivity(bool ignore_stepper_queue=false);
   #define disable_e1() /* nothing */
 #endif
 
-#if (EXTRUDERS > 2) && defined(E2_ENABLE_PIN) && (E2_ENABLE_PIN > -1)
+#if (EXTRUDERS > 2) && defined(E2_ENABLE_PIN) && (E2_ENABLE_PIN > -1) && !defined(E2_IS_TMC) 
   #define enable_e2() WRITE(E2_ENABLE_PIN, E_ENABLE_ON)
   #define disable_e2() WRITE(E2_ENABLE_PIN,!E_ENABLE_ON)
 #else
@@ -172,7 +173,7 @@ void manage_inactivity(bool ignore_stepper_queue=false);
   #define disable_e2() /* nothing */
 #endif
 
-#if (EXTRUDERS > 3) && defined(E3_ENABLE_PIN) && (E3_ENABLE_PIN > -1)
+#if (EXTRUDERS > 3) && defined(E3_ENABLE_PIN) && (E3_ENABLE_PIN > -1) && !defined(E3_IS_TMC) 
   #define enable_e3() WRITE(E3_ENABLE_PIN, E_ENABLE_ON)
   #define disable_e3() WRITE(E3_ENABLE_PIN,!E_ENABLE_ON)
 #else
