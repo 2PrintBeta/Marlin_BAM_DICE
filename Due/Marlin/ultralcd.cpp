@@ -250,6 +250,8 @@ static void lcd_sdcard_stop()
     card.sdprinting = false;
     card.closefile();
     quickStop();
+    clearbuffer();
+    
     if(SD_FINISHED_STEPPERRELEASE)
     {
         enquecommand_P(PSTR(SD_FINISHED_RELEASECOMMAND));

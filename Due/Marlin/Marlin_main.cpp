@@ -347,6 +347,16 @@ void serial_echopair_P(const char *s_P, unsigned long v)
     { serialprintPGM(s_P); SERIAL_ECHO(v); }
 
 
+//clear buffer - used when stop is pressed in the lcd_menu
+void clearbuffer()
+{
+  while(buflen > 0)
+  {
+     buflen = (buflen-1);
+     bufindr = (bufindr + 1)%BUFSIZE;
+  }
+}
+
 //adds an command to the main command buffer
 //thats really done in a non-safe way.
 //needs overworking someday
@@ -366,7 +376,7 @@ void enquecommand(const char *cmd)
 }
 
 void enquecommand_P(const char *cmd)
-{
+{ 
   if(buflen < BUFSIZE)
   {
     //this is dangerous if a mixing of serial and this happens
@@ -378,6 +388,7 @@ void enquecommand_P(const char *cmd)
     bufindw= (bufindw + 1)%BUFSIZE;
     buflen += 1;
   }
+
 }
 
 void setup_killpin()
