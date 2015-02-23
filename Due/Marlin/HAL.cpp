@@ -29,7 +29,7 @@
 // --------------------------------------------------------------------------
 
 #include "HAL.h"
-
+#include "Configuration.h"
 #include <Wire.h>
 
 #ifdef USE_FLASH_STORAGE
@@ -132,7 +132,7 @@ static void eeprom_init(void)
 void eeprom_write_byte(unsigned char *pos, unsigned char value)
 {
 #ifdef USE_FLASH_STORAGE
-  dueFlashStorage.write(pos,value);
+  dueFlashStorage.write((unsigned)pos,value);
 #else
 	unsigned eeprom_address = (unsigned) pos;
 
@@ -154,7 +154,7 @@ void eeprom_write_byte(unsigned char *pos, unsigned char value)
 unsigned char eeprom_read_byte(unsigned char *pos)
 {
 #ifdef USE_FLASH_STORAGE
-    dueFlashStorage.read(pos)
+    return dueFlashStorage.read((unsigned)pos);
 #else
 	byte data = 0xFF;
 	unsigned eeprom_address = (unsigned) pos;
