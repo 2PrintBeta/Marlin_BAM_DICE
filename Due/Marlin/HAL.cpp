@@ -32,6 +32,10 @@
 
 #include <Wire.h>
 
+#ifdef USE_FLASH_STORAGE
+#include <DueFlashStorage.h>
+#endif
+
 // --------------------------------------------------------------------------
 // Externals
 // --------------------------------------------------------------------------
@@ -57,7 +61,9 @@ uint8_t MCUSR;
 // --------------------------------------------------------------------------
 // Private Variables
 // --------------------------------------------------------------------------
-
+#ifdef USE_FLASH_STORAGE
+DueFlashStorage dueFlashStorage;
+#endif
 // --------------------------------------------------------------------------
 // Function prototypes
 // --------------------------------------------------------------------------
@@ -125,6 +131,9 @@ static void eeprom_init(void)
 
 void eeprom_write_byte(unsigned char *pos, unsigned char value)
 {
+#ifdef USE_FLASH_STORAGE
+  dueFlashStorage.write(pos,value);
+#else
 	unsigned eeprom_address = (unsigned) pos;
 
 	eeprom_init();
@@ -138,11 +147,15 @@ void eeprom_write_byte(unsigned char *pos, unsigned char value)
 	// wait for write cycle to complete
 	// this could be done more efficiently with "acknowledge polling"
 	delay(5);
+#endif
 }
 
 
 unsigned char eeprom_read_byte(unsigned char *pos)
 {
+#ifdef USE_FLASH_STORAGE
+    dueFlashStorage.read(pos)
+#else
 	byte data = 0xFF;
 	unsigned eeprom_address = (unsigned) pos;
 
@@ -156,6 +169,7 @@ unsigned char eeprom_read_byte(unsigned char *pos)
 	if (Wire.available())
 		data = Wire.read();
 	return data;
+#endif	
 }
 
 // --------------------------------------------------------------------------

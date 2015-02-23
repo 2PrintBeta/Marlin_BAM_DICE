@@ -436,6 +436,9 @@ const unsigned int dropsegments=5; //everything with less than this number of st
   #endif
 #endif
 
+// if you do not have a EEPROM i your arm based controller, enable this define to use the flash to store things.
+// you have to first import the DueFlashStorage library.
+#define USE_FLASH_STORAGE
 //===========================================================================
 //=============================  Define Defines  ============================
 //===========================================================================

@@ -54,3 +54,7 @@
 #if defined(DIGIPOT_I2C)
   #include <Wire.h>
 #endif
+
+#ifdef USE_FLASH_STORAGE
+#include <DueFlashStorage.h>
+#endif
