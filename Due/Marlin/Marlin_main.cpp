@@ -3370,17 +3370,17 @@ void controllerFan()
   {
     lastMotorCheck = millis();
 
-    if(!READ(X_ENABLE_PIN) || !READ(Y_ENABLE_PIN) || !READ(Z_ENABLE_PIN) || (soft_pwm_bed > 0)
+    if(!X_ENABLE_READ || !Y_ENABLE_READ || !Z_ENABLE_READ || (soft_pwm_bed > 0)
     #if EXTRUDERS > 2
-       || !READ(E2_ENABLE_PIN)
+       || !E2_ENABLE_READ
     #endif
     #if EXTRUDER > 1
       #if defined(X2_ENABLE_PIN) && X2_ENABLE_PIN > -1
-       || !READ(X2_ENABLE_PIN)
+       || !X2_ENABLE_READ
       #endif
-       || !READ(E1_ENABLE_PIN)
+       || !E1_ENABLE_READ)
     #endif
-       || !READ(E0_ENABLE_PIN)) //If any of the drivers are enabled...
+       || !E0_ENABLE_READ) //If any of the drivers are enabled...
     {
       lastMotor = millis(); //... set time to NOW so the fan will turn on
     }
@@ -3475,7 +3475,7 @@ void manage_inactivity()
     if( (millis() - previous_millis_cmd) >  EXTRUDER_RUNOUT_SECONDS*1000 )
     if(degHotend(active_extruder)>EXTRUDER_RUNOUT_MINTEMP)
     {
-     bool oldstatus=READ(E0_ENABLE_PIN);
+     bool oldstatus=E0_ENABLE_READ;
      enable_e0();
      float oldepos=current_position[E_AXIS];
      float oldedes=destination[E_AXIS];
@@ -3487,7 +3487,7 @@ void manage_inactivity()
      plan_set_e_position(oldepos);
      previous_millis_cmd=millis();
      st_synchronize();
-     WRITE(E0_ENABLE_PIN,oldstatus);
+     E0_ENABLE_WRITE(oldstatus);
     }
   #endif
   #if defined(DUAL_X_CARRIAGE)
@@ -3524,6 +3524,14 @@ void kill()
   SERIAL_ERROR_START;
   SERIAL_ERRORLNPGM(MSG_ERR_KILLED);
   LCD_ALERTMESSAGEPGM(MSG_KILLED);
+  
+  // FMC small patch to update the LCD before ending
+  sei();   // enable interrupts
+  for ( int i=5; i--; lcd_update())
+  {
+     delay(200);	
+  }
+  cli();   // disable interrupts
   suicide();
   while(1) { /* Intentionally left empty */ } // Wait for reset
 }

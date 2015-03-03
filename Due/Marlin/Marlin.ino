@@ -58,3 +58,11 @@
 #ifdef USE_FLASH_STORAGE
 #include <DueFlashStorage.h>
 #endif
+
+#ifdef HAVE_TMCDRIVER
+  #include <TMC26XStepper.h>
+#endif
+
+#ifdef HAVE_L6470DRIVER
+  #include <L6470.h>
+#endif
