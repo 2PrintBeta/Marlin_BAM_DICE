@@ -610,6 +610,7 @@ class TMC26XStepper {
 	
 	//SPI sender
 	inline void send262(unsigned long datagram);
+	char SoftSPI_Transfer (char SPI_byte);
 };
 
 #endif

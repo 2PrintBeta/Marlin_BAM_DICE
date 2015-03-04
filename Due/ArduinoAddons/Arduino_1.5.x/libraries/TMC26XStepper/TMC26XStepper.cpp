@@ -44,9 +44,9 @@ inline int digitalReadDirect(int pin){
   return !!(g_APinDescription[pin].pPort -> PIO_PDSR & g_APinDescription[pin].ulPin);
 }
 #else
-#warning No software SPI configured for this Hardware
-inline void digitalWriteDirect(int pin, boolean val){ }
-inline int digitalReadDirect(int pin){ return 0;}
+#warning No fast IOs for this platform
+inline void digitalWriteDirect(int pin, boolean val){ digitalWrite(pin,val)}
+inline int digitalReadDirect(int pin){ return digitalRead(pin);}
 #endif
 
 
@@ -258,6 +258,8 @@ void TMC26XStepper::start() {
 	    pinMode(mosi_pin, OUTPUT);
 		pinMode(miso_pin, INPUT);
 		pinMode(sck_pin, OUTPUT);
+		//sck default high
+		digitalWrite(sck_pin,HIGH);
 	}
 	//set the initial values
 	send262(driver_control_register_value); 
@@ -1067,82 +1069,15 @@ inline void TMC26XStepper::send262(unsigned long datagram) {
 	{
 	    // no interrupts during byte receive - about 8 us
        noInterrupts();
-	   unsigned char data = (datagram >> 16) & 0xff;
-	   
-
-	   // first transfer
-	   digitalWriteDirect(sck_pin, LOW);
-	   for (uint8_t i = 0; i < 8; i++) 
-	   {
-	    //set data pin
-	    digitalWriteDirect(mosi_pin, data & 0X80);
-	    //shift data
-		data <<= 1;
-		//set clock high 
-        digitalWriteDirect(sck_pin, HIGH);
-
-        // adjust so SCK is nice
-        nop;
-        nop;
-    
-	    //read
-        i_datagram <<= 1;
-        if (digitalReadDirect(miso_pin)) i_datagram |= 1; 
-
-		// set clock low
-        digitalWriteDirect(sck_pin, LOW);
-      }
-	  i_datagram <<= 8;
-	  data = (datagram >> 8) & 0xff;
-	   // second transfer
-	   digitalWriteDirect(sck_pin, LOW);
-	   for (uint8_t i = 0; i < 8; i++) 
-	   {
-	    //set data pin
-	    digitalWriteDirect(mosi_pin, data & 0X80);
-	    //shift data
-		data <<= 1;
-		//set clock high 
-        digitalWriteDirect(sck_pin, HIGH);
-
-        // adjust so SCK is nice
-        nop;
-        nop;
-    
-	    //read
-        i_datagram <<= 1;
-        if (digitalReadDirect(miso_pin)) i_datagram |= 1; 
-
-		// set clock low
-        digitalWriteDirect(sck_pin, LOW);
-      }
+	 	   //write/read the values
+	   i_datagram = SoftSPI_Transfer((datagram >> 16) & 0xff);
 	   i_datagram <<= 8;
-	   data = (datagram ) & 0xff;
-	    // third transfer
-	   digitalWriteDirect(sck_pin, LOW);
-	   for (uint8_t i = 0; i < 8; i++) 
-	   {
-	    //set data pin
-	    digitalWriteDirect(mosi_pin, data & 0X80);
-	    //shift data
-		data <<= 1;
-		//set clock high 
-        digitalWriteDirect(sck_pin, HIGH);
-
-        // adjust so SCK is nice
-        nop;
-        nop;
-    
-	    //read
-        i_datagram <<= 1;
-        if (digitalReadDirect(miso_pin)) i_datagram |= 1; 
-
-		// set clock low
-        digitalWriteDirect(sck_pin, LOW);
-      }
-	  i_datagram >>= 4; 
-      // enable interrupts
-      interrupts();
+	   i_datagram |= SoftSPI_Transfer((datagram >>  8) & 0xff);
+	   i_datagram <<= 8;
+	   i_datagram |= SoftSPI_Transfer((datagram) & 0xff);
+	   i_datagram >>= 4;
+       // enable interrupts
+       interrupts();
 	}
 	
 #ifdef DEBUG
@@ -1168,3 +1103,20 @@ inline void TMC26XStepper::send262(unsigned long datagram) {
 	//store the datagram as status result
 	driver_status_result = i_datagram;
 }
+
+char TMC26XStepper::SoftSPI_Transfer (char SPI_byte)
+{
+	unsigned char SPI_count; // counter for SPI transaction
+	for (SPI_count = 8; SPI_count > 0; SPI_count--) // single byte SPI loop
+	{
+		// set clock low
+        digitalWriteDirect(sck_pin, LOW);
+		//set data pin
+	    digitalWriteDirect(mosi_pin, SPI_byte & 0X80);
+		SPI_byte = SPI_byte << 1; // shift next bit into MSB
+		//set clock high 
+        digitalWriteDirect(sck_pin, HIGH);
+		SPI_byte |= digitalReadDirect(miso_pin); // capture current bit on MISO
+	}
+	return (SPI_byte);
+} // END SPI_Transfer

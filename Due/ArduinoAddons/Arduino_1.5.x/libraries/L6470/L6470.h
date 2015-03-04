@@ -286,6 +286,7 @@ class L6470{
 	int _MISOPin;
 	int _MOSIPin;
 	int _SCKPin;
+	char SoftSPI_Transfer (char SPI_byte);
 };
 
 #endif

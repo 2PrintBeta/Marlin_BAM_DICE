@@ -22,10 +22,13 @@ inline int digitalReadDirect(int pin){
   return !!(g_APinDescription[pin].pPort -> PIO_PDSR & g_APinDescription[pin].ulPin);
 }
 #else
-#warning No software SPI configured for this Hardware
-inline void digitalWriteDirect(int pin, boolean val){ }
-inline int digitalReadDirect(int pin){ return 0;}
+#warning No fast IOs for this platform
+inline void digitalWriteDirect(int pin, boolean val){ digitalWrite(pin,val)}
+inline int digitalReadDirect(int pin){ return digitalRead(pin);}
 #endif
+
+
+
 
 L6470::L6470(int SSPin){
   _SSPin = SSPin;
@@ -68,6 +71,8 @@ void L6470::init(int k_value){
     pinMode(_MOSIPin, OUTPUT);
     pinMode(_MISOPin, INPUT);
     pinMode(_SCKPin, OUTPUT);
+	// clock is idle high
+	digitalWrite(_SCKPin, HIGH);
   }  
   pinMode(BUSYN, INPUT);
 #if (ENABLE_RESET_PIN == 1)
@@ -574,39 +579,32 @@ byte L6470::Xfer(byte data){
   }
   else
   {
-      // no interrupts during byte receive - about 8 us
-       noInterrupts();
-	   digitalWriteDirect(_SCKPin, LOW);
-	   
-	   for (uint8_t i = 0; i < 8; i++) 
-	   {
-	    //set data pin
-	    digitalWriteDirect(_MOSIPin, data & 0X80);
-	    //shift data
-		data <<= 1;
-		//set clock high 
-        digitalWriteDirect(_SCKPin, HIGH);
-
-        // adjust so SCK is nice
-        nop;
-        nop;
-    
-	    //read
-        data_out <<= 1;
-        if (digitalReadDirect(_MISOPin)) data_out |= 1; 
-
-		// set clock low
-        digitalWriteDirect(_SCKPin, LOW);
-      }
-      // enable interrupts
-      interrupts();
-	
+    // no interrupts during byte receive - about 8 us
+    noInterrupts();
+	data_out =  SoftSPI_Transfer(data);
+    // enable interrupts
+    interrupts();
   }
   digitalWrite(_SSPin,HIGH);
   return data_out;
 }
 
-
+char L6470::SoftSPI_Transfer (char SPI_byte)
+{
+	unsigned char SPI_count; // counter for SPI transaction
+	for (SPI_count = 8; SPI_count > 0; SPI_count--) // single byte SPI loop
+	{
+		// set clock low
+        digitalWriteDirect(_SCKPin, LOW);
+		//set data pin
+	    digitalWriteDirect(_MOSIPin, SPI_byte & 0X80);
+		SPI_byte = SPI_byte << 1; // shift next bit into MSB
+		//set clock high 
+        digitalWriteDirect(_SCKPin, HIGH);
+		SPI_byte |= digitalReadDirect(_MISOPin); // capture current bit on MISO
+	}
+	return (SPI_byte);
+} // END SPI_Transfer
 
 void L6470::SetParam(byte param, unsigned long value){
   Xfer(SET_PARAM | param);
