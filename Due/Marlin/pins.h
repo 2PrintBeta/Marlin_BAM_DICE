@@ -380,7 +380,10 @@
 #define TEMP_3_PIN         -1   // ANALOG NUMBERING
 #define TEMP_4_PIN         -1   // ANALOG NUMBERING
 
-
+// for software SPI
+#define S_SPI_MOSI_PIN       51
+#define S_SPI_MISO_PIN       50
+#define S_SPI_SCK_PIN        52
 
   #ifdef NUM_SERVOS
     #define SERVO0_PIN         11
