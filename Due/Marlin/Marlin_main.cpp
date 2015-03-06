@@ -465,10 +465,57 @@ void servo_init()
   #endif
 }
 
+void bt_serial_configure()
+{
+	
+	int baudrates[] = {1200,2400,4800,9600,19200,38400,57600,115200,230400,460800,921600,1382400};
+	int baudnumber=1;
+	//find baudrate number we want to set
+	for(int i =0; i < (sizeof(baudrates) / sizeof(baudrates[0]));i++)
+	{
+	   if(baudrates[i] == BAUDRATE)
+	   {
+			baudnumber = i+1;
+			break;
+		}
+	}
+	// try different baudrates until we get a OK
+	for(int i =0; i < (sizeof(baudrates) / sizeof(baudrates[0]));i++)
+	{
+		MYSERIAL.begin(baudrates[i]);
+		MYSERIAL.print("AT");
+		delay(500);
+		String answer = "";
+		char character;
+		while(MYSERIAL.available()) 
+		{
+			character = MYSERIAL.read();
+			answer.concat(character);
+		}
+		if(answer != "OK")  //current baudrate found
+		{
+		   MYSERIAL.print("AT+BAUD");
+		   MYSERIAL.print(baudnumber);
+		   delay(500);
+		   MYSERIAL.end();
+		   break;
+		}
+		
+		//incorrect baudrate
+		MYSERIAL.end();
+	}
+}
+
 void setup()
 {
   setup_killpin();
   setup_powerhold();
+  
+// try to configure the BT_JY_MCU module  
+  #ifdef BT_JY_MCU
+   bt_serial_configure();
+  #endif
+  
   MYSERIAL.begin(BAUDRATE);
   SERIAL_PROTOCOLLNPGM("start");
   SERIAL_ECHO_START;
