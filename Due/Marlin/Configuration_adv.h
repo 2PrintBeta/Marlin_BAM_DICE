@@ -458,7 +458,7 @@ const unsigned int dropsegments=5; //everything with less than this number of st
 	#define X2_SENSE_RESISTOR 91 //in mOhms
 	#define X2_MICROSTEPS 16     //number of microsteps
 	
-//	#define Y_IS_TMC
+	#define Y_IS_TMC
 	#define Y_MAX_CURRENT 1000  //in mA
 	#define Y_SENSE_RESISTOR 91 //in mOhms
 	#define Y_MICROSTEPS 16     //number of microsteps
@@ -505,12 +505,12 @@ const unsigned int dropsegments=5; //everything with less than this number of st
  * you need to import the L6470 library into the arduino IDE for this
  ******************************************************************************/
 
-#define HAVE_L6470DRIVER
+//#define HAVE_L6470DRIVER
 #ifdef HAVE_L6470DRIVER
 
-	#define X_IS_L6470
+//	#define X_IS_L6470
 	#define X_MICROSTEPS 16     //number of microsteps
-	#define X_K_VAL 50          // 0 - 255, Higher values, are higher power. Be carefull not to go too high    
+	#define X_K_VAL 70          // 0 - 255, Higher values, are higher power. Be carefull not to go too high    
 	#define X_OVERCURRENT 2000  //maxc current in mA. If the current goes over this value, the driver will switch off
 	#define X_STALLCURRENT 1500 //current in mA where the driver will detect a stall
 	

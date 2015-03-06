@@ -1044,8 +1044,15 @@ inline void TMC26XStepper::send262(unsigned long datagram) {
 	  #endif
 	}
 	
+    if(mosi_pin != -1)
+    {
+      //make sure SCK is high before selecing the device
+      digitalWriteDirect(sck_pin,HIGH);
+    }
+
+
 	//select the TMC driver
-	digitalWrite(cs_pin,LOW);
+	digitalWriteDirect(cs_pin,LOW);
 
 	//ensure that only valid bist are set (0-19)
 	//datagram &=REGISTER_BIT_PATTERN;
@@ -1086,7 +1093,7 @@ inline void TMC26XStepper::send262(unsigned long datagram) {
 	debugLastStatus();
 #endif
 	//deselect the TMC chip
-	digitalWrite(cs_pin,HIGH); 
+	digitalWriteDirect(cs_pin,HIGH); 
     
 	if(mosi_pin == -1)  // hardware SPI
 	{
@@ -1114,6 +1121,10 @@ char TMC26XStepper::SoftSPI_Transfer (char SPI_byte)
 		//set data pin
 	    digitalWriteDirect(mosi_pin, SPI_byte & 0X80);
 		SPI_byte = SPI_byte << 1; // shift next bit into MSB
+
+        nop;
+        nop;
+
 		//set clock high 
         digitalWriteDirect(sck_pin, HIGH);
 		SPI_byte |= digitalReadDirect(miso_pin); // capture current bit on MISO

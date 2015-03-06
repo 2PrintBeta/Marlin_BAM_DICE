@@ -101,10 +101,11 @@ void L6470::init(int k_value){
   // First things first: let's check communications. The CONFIG register should
   // power up to 0x2E88, so we can use that to check the communications.
   if (GetParam(CONFIG) == 0x2E88){
-    //Serial.println('good to go');
+  //  Serial.println("good to go");
   }
   else{
-    //Serial.println('Comm issue');
+  //  Serial.print("Comm issue");
+  //  Serial.println(GetParam(CONFIG),HEX);
   }
 
 #if  (ENABLE_RESET_PIN == 0) 
@@ -563,14 +564,20 @@ unsigned long L6470::Param(unsigned long value, byte bit_len){
   return (ret_val & mask);
 }
 
-#define nop asm volatile ("nop\n\t")
 byte L6470::Xfer(byte data){
   // This simple function shifts a byte out over SPI and receives a byte over
   // SPI. Unusually for SPI devices, the dSPIN requires a toggling of the
   // CS (slaveSelect) pin after each byte sent. That makes this function
   // a bit more reasonable, because we can include more functionality in it.
   byte data_out;
-  digitalWrite(_SSPin,LOW);
+  
+  if(_MOSIPin != -1)
+  {
+    //make sure SCK is high before selecing the device
+    digitalWriteDirect(_SCKPin,HIGH);
+  }
+
+  digitalWriteDirect(_SSPin,LOW);
   // SPI.transfer() both shifts a byte out on the MOSI pin AND receives a
   // byte in on the MISO pin.
   if(_MOSIPin == -1)
@@ -585,12 +592,14 @@ byte L6470::Xfer(byte data){
     // enable interrupts
     interrupts();
   }
-  digitalWrite(_SSPin,HIGH);
+  digitalWriteDirect(_SSPin,HIGH);
   return data_out;
 }
 
+#define nop asm volatile ("nop\n\t")
 char L6470::SoftSPI_Transfer (char SPI_byte)
 {
+
 	unsigned char SPI_count; // counter for SPI transaction
 	for (SPI_count = 8; SPI_count > 0; SPI_count--) // single byte SPI loop
 	{
@@ -599,10 +608,15 @@ char L6470::SoftSPI_Transfer (char SPI_byte)
 		//set data pin
 	    digitalWriteDirect(_MOSIPin, SPI_byte & 0X80);
 		SPI_byte = SPI_byte << 1; // shift next bit into MSB
+
+        nop;
+        nop;
 		//set clock high 
         digitalWriteDirect(_SCKPin, HIGH);
 		SPI_byte |= digitalReadDirect(_MISOPin); // capture current bit on MISO
 	}
+
+
 	return (SPI_byte);
 } // END SPI_Transfer
 
