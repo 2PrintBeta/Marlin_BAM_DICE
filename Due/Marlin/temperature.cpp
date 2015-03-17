@@ -34,6 +34,10 @@
 #include "temperature.h"
 #include "watchdog.h"
 
+#ifdef HAVE_DICE_TC
+  #include <DICE_TC_lib.h>
+#endif
+
 //===========================================================================
 //=============================public variables============================
 //===========================================================================
@@ -164,6 +168,9 @@ unsigned long watchmillis[EXTRUDERS] = ARRAY_BY_EXTRUDERS(0,0,0);
 #define WRITE_HEATER(pin,value) WRITE(pin,value)
 #endif
 
+#ifdef HAVE_DICE_TC
+DICE_TC dice_tc(S_SPI_SCK_PIN,DICE_TC_CS,S_SPI_MISO_PIN,DICE_TC_A0,DICE_TC_A1,true);
+#endif
 //===========================================================================
 //=============================   functions      ============================
 //===========================================================================
@@ -692,14 +699,21 @@ static float analog2tempBed(int raw) {
     and this function is called from normal context as it is too slow to run in interrupts and will block the stepper routine otherwise */
 static void updateTemperaturesFromRawValues()
 {
-    for(uint8_t e=0;e<EXTRUDERS;e++)
-    {
-        current_temperature[e] = analog2temp(current_temperature_raw[e], e);
-    }
-    current_temperature_bed = analog2tempBed(current_temperature_bed_raw);
-    #ifdef TEMP_SENSOR_1_AS_REDUNDANT
-      redundant_temperature = analog2temp(redundant_temperature_raw, 1);
-    #endif
+    //with DICE_TC, first and second sensor are always extruders, and third sensor is the heated bed
+    #ifdef HAVE_DICE_TC
+	   current_temperature[0] = dice_tc.readCelsius(0);
+	   current_temperature[1] = dice_tc.readCelsius(1);
+	   current_temperature_bed = dice_tc.readCelsius(3);
+    #else
+		for(uint8_t e=0;e<EXTRUDERS;e++)
+		{
+			current_temperature[e] = analog2temp(current_temperature_raw[e], e);
+		}
+		current_temperature_bed = analog2tempBed(current_temperature_bed_raw);
+		#ifdef TEMP_SENSOR_1_AS_REDUNDANT
+		redundant_temperature = analog2temp(redundant_temperature_raw, 1);
+		#endif
+	#endif
     //Reset the watchdog after we know we have a temperature measurement.
     watchdog_reset();
 

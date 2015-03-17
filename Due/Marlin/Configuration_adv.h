@@ -573,6 +573,15 @@ const unsigned int dropsegments=5; //everything with less than this number of st
 	
 #endif
 
+
+/******************************************************************************\
+ * enable this section if you have ad DICE_TC with themocouples in you system
+ * you need to import the DICE_TC_Lib library into the arduino IDE for this
+ ******************************************************************************/
+//#define HAVE_DICE_TC
+#define DICE_TC_CS E1_ENABLE_PIN   //set to correct enable pin, depending on the slot where the DICE_TC is plugged
+#define DICE_TC_A0 E1_STEP_PIN   //set to correct step pin, depending on the slot where the DICE_TC is plugged
+#define DICE_TC_A1 E1_DIR_PIN    //set to correct dir pin, depending on the slot where the DICE_TC is plugged
 //===========================================================================
 //=============================  Define Defines  ============================
 //===========================================================================

@@ -66,3 +66,7 @@
 #ifdef HAVE_L6470DRIVER
   #include <L6470.h>
 #endif
+
+#ifdef HAVE_DICE_TC
+  #include <DICE_TC_lib.h>
+#endif
