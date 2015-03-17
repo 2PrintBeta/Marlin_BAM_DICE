@@ -30,8 +30,8 @@
 // This enables the serial port associated to the Bluetooth interface
 //#define BTENABLED              // Enable BT interface on AT90USB devices
 
-// if you enable this option, the software tries to conenct and configure a JY-MCU module
-#define BT_JY_MCU
+// if you enable this option, the software tries to connect and configure a JY-MCU module
+//#define BT_JY_MCU
 
 //// The following define selects which electronics board you have. Please choose the one that matches your setup
 // 10 = Gen7 custom (Alfons3 Version) "https://github.com/Alfons3/Generation_7_Electronics"

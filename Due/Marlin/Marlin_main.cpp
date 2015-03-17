@@ -484,7 +484,7 @@ void bt_serial_configure()
 	{
 		MYSERIAL.begin(baudrates[i]);
 		MYSERIAL.print("AT");
-		delay(500);
+		delay(1000);
 		String answer = "";
 		char character;
 		while(MYSERIAL.available()) 
@@ -496,7 +496,7 @@ void bt_serial_configure()
 		{
 		   MYSERIAL.print("AT+BAUD");
 		   MYSERIAL.print(baudnumber);
-		   delay(500);
+		   delay(1000);
 		   MYSERIAL.end();
 		   break;
 		}

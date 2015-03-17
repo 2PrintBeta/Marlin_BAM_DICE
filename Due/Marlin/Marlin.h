@@ -67,7 +67,11 @@
   #ifdef ARDUINO_ARCH_AVR
     #define MYSERIAL MSerial
   #elif defined (ARDUINO_ARCH_SAM)
-    #define MYSERIAL Serial
+	#ifdef BT_JY_MCU
+       #define MYSERIAL Serial1
+	#else 
+		#define MYSERIAL Serial
+	#endif	
   #endif
 #endif
 
