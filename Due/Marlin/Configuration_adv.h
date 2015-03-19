@@ -579,9 +579,24 @@ const unsigned int dropsegments=5; //everything with less than this number of st
  * you need to import the DICE_TC_Lib library into the arduino IDE for this
  ******************************************************************************/
 //#define HAVE_DICE_TC
-#define DICE_TC_CS E1_ENABLE_PIN   //set to correct enable pin, depending on the slot where the DICE_TC is plugged
-#define DICE_TC_A0 E1_STEP_PIN   //set to correct step pin, depending on the slot where the DICE_TC is plugged
-#define DICE_TC_A1 E1_DIR_PIN    //set to correct dir pin, depending on the slot where the DICE_TC is plugged
+#ifdef HAVE_DICE_TC
+	#define DICE_TC_CS E1_ENABLE_PIN   //set to correct enable pin, depending on the slot where the DICE_TC is plugged
+	#define DICE_TC_A0 E1_STEP_PIN   //set to correct step pin, depending on the slot where the DICE_TC is plugged
+	#define DICE_TC_A1 E1_DIR_PIN    //set to correct dir pin, depending on the slot where the DICE_TC is plugged
+#endif
+/*********************************************************************************\
+* if you enable this option, the software tries to communicate with a ESP8266 module
+*
+**********************************************************************************/
+#define HAVE_ESP8266
+#ifdef HAVE_ESP8266
+	#define ESP_STATION 1  // act as a WLAN station
+	#define ESP_AP 2	   // act as a WLAN AP	 
+	#define ESP8266_MODE ESP_STATION  
+	#define ESP8266_SSID  "\"BETA-NET\""  			// the ssid of the wlan to use
+	#define ESP8266_PWD   "\"YOURKEY\""    //wlan key 
+    #define ESP8266_PORT  8080
+#endif
 //===========================================================================
 //=============================  Define Defines  ============================
 //===========================================================================

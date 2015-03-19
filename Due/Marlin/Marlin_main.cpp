@@ -61,6 +61,11 @@
 #include <SPI.h>
 #endif
 
+#ifdef HAVE_ESP8266
+#include "esp8266.h"
+#warning test
+#endif
+
 #define VERSION_STRING  "1.0.0"
 
 // look here for descriptions of G-codes: http://linuxcnc.org/handbook/gcode/g-code.html
@@ -517,6 +522,12 @@ void setup()
   #endif
   
   MYSERIAL.begin(BAUDRATE);
+  
+  //try to configure the ESP8266 Module
+  #ifdef HAVE_ESP8266
+  init_esp8266();
+  #endif
+  
   SERIAL_PROTOCOLLNPGM("start");
   SERIAL_ECHO_START;
 
