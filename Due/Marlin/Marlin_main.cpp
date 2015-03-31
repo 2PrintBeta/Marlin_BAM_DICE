@@ -631,6 +631,8 @@ void loop()
   manage_inactivity();
   checkHitEndstops();
   lcd_update();
+  
+  handle_esp8266();
 }
 
 void get_command()
