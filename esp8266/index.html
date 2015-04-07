@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <link rel="stylesheet" type="text/css" href="index.css">
+      <meta charset="UTF-8">
+      <title>BAM&amp;DICE Control </title>
+   </head>
+   <script>
+      var xmlHttp = null;
+
+      function moveX(amount)
+      {
+         var url = "/index.lua?movex=" + amount;
+
+         xmlHttp = new XMLHttpRequest();
+         xmlHttp.onreadystatechange = processRequest;
+         xmlHttp.open("GET", url, true);
+         xmlHttp.send( null );
+      }
+	  function moveY(amount)
+      {
+         var url = "/index.lua?movey=" + amount;
+
+         xmlHttp = new XMLHttpRequest();
+         xmlHttp.onreadystatechange = processRequest;
+         xmlHttp.open("GET", url, true);
+         xmlHttp.send( null );
+      }
+	  function moveZ(amount)
+      {
+         var url = "/index.lua?movez=" + amount;
+
+         xmlHttp = new XMLHttpRequest();
+         xmlHttp.onreadystatechange = processRequest;
+         xmlHttp.open("GET", url, true);
+         xmlHttp.send( null );
+      }
+
+      function processRequest()
+      {
+         if(xmlHttp.readyState == 0)
+         {
+            document.getElementById("label").innerHTML = 'Initalizing...';
+            document.getElementById("label").className = "initalizing";
+         }
+         else if(xmlHttp.readyState == 1)
+         {
+            document.getElementById("label").innerHTML = 'Server connection established.';
+            document.getElementById("label").className = "connection";
+         }
+         else if(xmlHttp.readyState == 2)
+         {
+            document.getElementById("label").innerHTML = 'Request received.';
+            document.getElementById("label").className = "received";
+         }
+         else if(xmlHttp.readyState == 3)
+         {
+            document.getElementById("label").innerHTML = 'Processing request.';
+            document.getElementById("label").className = "processing";
+         }
+         else if(xmlHttp.readyState == 4)
+         {
+            if(xmlHttp.status == 200)
+            {
+               document.getElementById("label").innerHTML = xmlHttp.responseText;
+               document.getElementById("label").className = "ok";
+               sleep(300);
+               document.getElementById("label").className = "start";
+            }
+            else if(xmlHttp.status == 400)
+            {
+               document.getElementById("label").innerHTML = 'Bad request.';
+               document.getElementById("label").className = "bad";
+            }
+         }
+      }
+      function sleep(milliseconds){
+         var start = new Date().getTime();
+         for (var i = 0; i < 1e7; i++)
+         {
+            if ((new Date().getTime() - start) > milliseconds)
+            {
+               break;
+            }
+         }
+      }
+   </script>
+   <body bgcolor="#5f5f5f">
+   <div id="remote">
+	  <title> BAM&amp;DICE Controller </title>
+      <div id="label" class="start"></div>
+	  <div id="movearea" >
+		<table>
+			<tr>
+				<td></td><td></td><td></td><td></td><td>
+				<a href="#" onclick="moveY(100);" class="button button-y"> <span>Y+100</span> </a>
+				</td><td></td><td></td><td></td><td></td><td></td>
+			</tr>
+			<tr>
+				<td></td><td></td><td></td><td></td><td>
+				<a href="#" onclick="moveY(10);" class="button button-y"> <span>Y+10</span> </a>
+				</td><td></td><td></td><td></td><td></td><td>
+				<a href="#" onclick="moveZ(100);" class="button button-z"> <span>Z+10</span> </a>
+				</td>
+			</tr>
+			<tr>
+				<td></td><td></td><td></td><td></td><td>
+  				<a href="#" onclick="moveY(1);" class="button button-y"> <span>Y+1</span> </a>
+				</td><td></td><td></td><td></td><td></td><td>
+				<a href="#" onclick="moveZ(1);" class="button button-z"> <span>Z+1</span> </a>
+				</td>
+			</tr>
+			<tr>
+				<td></td><td></td><td></td><td></td><td>
+				<a href="#" onclick="moveY(0.1);" class="button button-y"> <span>Y+0.1</span> </a>
+				</td><td></td><td></td><td></td><td></td><td>		
+				<a href="#" onclick="moveZ(0.1);" class="button button-z"> <span>Z+0.1</span> </a>
+				</td>
+			</tr>
+			<tr>
+				<td>
+				<a href="#" onclick="moveX(-100);" class="button button-x"> <span>X-100</span> </a>
+				</td><td>
+				<a href="#" onclick="moveX(-10);" class="button button-x"> <span>X-10</span> </a>
+				</td><td>
+				<a href="#" onclick="moveX(-1);" class="button button-x"> <span>X-1</span> </a>
+				</td><td>
+				<a href="#" onclick="moveX(-0.1);" class="button button-x"> <span>X-0.1</span> </a>
+				</td><td>
+ 
+				</td><td>
+				<a href="#" onclick="moveX(0.1);" class="button button-x"> <span>X+0.1</span> </a>
+				</td><td>
+				<a href="#" onclick="moveX(1);" class="button button-x"> <span>X+1</span> </a>
+				</td><td>
+				<a href="#" onclick="moveX(10);" class="button button-x"> <span>X+10</span> </a>
+				</td><td>
+				<a href="#" onclick="moveX(100);" class="button button-x"> <span>X+100</span> </a>
+				</td><td></td>
+			</tr>
+			<tr>
+				<td></td><td></td><td></td><td></td><td>
+				<a href="#" onclick="moveY(-0.1);" class="button button-y"> <span>Y-0.1</span> </a>
+				</td><td></td><td></td><td></td><td></td><td>
+				<a href="#" onclick="moveZ(-0.1);" class="button button-z"> <span>Z-0.1</span> </a>
+				</td>
+			</tr>
+			<tr>
+				<td></td><td></td><td></td><td></td><td>
+				<a href="#" onclick="moveY(-1);" class="button button-y"> <span>Y-1</span> </a>
+				</td><td></td><td></td><td></td><td></td><td>
+  				<a href="#" onclick="moveZ(-1);" class="button button-z"> <span>Z-1</span> </a>
+				</td>
+			</tr>
+			<tr>
+				<td></td><td></td><td></td><td></td><td>
+				<a href="#" onclick="moveY(-10);" class="button button-y"> <span>Y-10</span> </a>
+				</td><td></td><td></td><td></td><td></td><td>
+				<a href="#" onclick="moveZ(-10);" class="button button-z"> <span>Z-10</span> </a>
+				</td>
+			</tr>
+			<tr>
+				<td></td><td></td><td></td><td></td><td>
+				<a href="#" onclick="moveY(-100);" class="button button-y"> <span>Y-100</span> </a>
+				</td><td></td><td></td><td></td><td></td>
+			</tr> 
+		</table>
+	  </div>
+	  <div id="spacer"></div>
+   </div>
+   </body>
+</html>
+

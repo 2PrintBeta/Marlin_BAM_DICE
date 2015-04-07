@@ -31,21 +31,15 @@ void init_esp8266();
 //regulary call this functions
 void handle_esp8266();
 
-//html functions
-void HTML_Page(int WIFI_Channel);
-void HTML_Make_Header();
-void HTML_Make_Content();
-void HTML_Send_Int(int p_int,int width);
-void HTML_Send(char * p_text);
-void HTML_Send_PROGMEM(const __FlashStringHelper* p_text);
+// helper
+void check_upload_esp8266(int type);
 
 
 //helper functions
-void process_get(char* buffer_pointer);
-void ESP8266_move(int x, int y, int z);
-void ESP8266_Send_Header(int channel,int length,bool first);
+void upload_file_esp8266(char* remote_file);
+void esp8266_reset();
+
 bool searchResults(char *target, long timeout, int dbg);
-bool getIP();
 void clearResults();
 void debug(char *msg) ;
 

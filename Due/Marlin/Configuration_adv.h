@@ -586,15 +586,15 @@ const unsigned int dropsegments=5; //everything with less than this number of st
 #endif
 /*********************************************************************************\
 * if you enable this option, the software tries to communicate with a ESP8266 module
-*
+* Also change SERIAL_BUFFER_SIZE in Arduino\hardware\arduino\sam\cores\arduino\RingBuffer.h to 255 !
 **********************************************************************************/
 #define HAVE_ESP8266
 #ifdef HAVE_ESP8266
 	#define ESP_STATION 1  // act as a WLAN station
 	#define ESP_AP 2	   // act as a WLAN AP	 
 	#define ESP8266_MODE ESP_STATION  
-	#define ESP8266_SSID  "\"BETA-NET\""  			// the ssid of the wlan to use
-	#define ESP8266_PWD   "\"YOURKEY\""    //wlan key 
+	#define ESP8266_SSID  "BETA-NET"  			// the ssid of the wlan to use
+	#define ESP8266_PWD   "8127969022774633"    //wlan key 
     #define ESP8266_PORT  8080
 #endif
 //===========================================================================

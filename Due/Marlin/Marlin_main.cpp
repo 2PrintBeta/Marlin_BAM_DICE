@@ -523,11 +523,6 @@ void setup()
   
   MYSERIAL.begin(BAUDRATE);
   
-  //try to configure the ESP8266 Module
-  #ifdef HAVE_ESP8266
-  init_esp8266();
-  #endif
-  
   SERIAL_PROTOCOLLNPGM("start");
   SERIAL_ECHO_START;
 
@@ -566,6 +561,11 @@ void setup()
   // loads data from EEPROM if available else uses defaults (and resets step acceleration rate)
   Config_RetrieveSettings();
 
+   //try to configure the ESP8266 Module
+  #ifdef HAVE_ESP8266
+  init_esp8266();
+  #endif
+  
   tp_init();    // Initialize temperature loop
   plan_init();  // Initialize planner;
   watchdog_init();
@@ -3073,6 +3073,14 @@ void process_commands()
       #endif
     }
     break;
+	#ifdef HAVE_ESP8266
+	case 888:  //check if there is a need to upload files to ESP8266, S defines which files to upload
+	{
+		if(code_seen('S')) check_upload_esp8266(code_value());	
+		else check_upload_esp8266(0);
+		break;
+	}
+	#endif
     case 999: // M999: Restart after being stopped
       Stopped = false;
       lcd_reset_alert_level();
