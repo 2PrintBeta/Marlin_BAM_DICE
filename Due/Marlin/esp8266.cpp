@@ -28,10 +28,13 @@
 #define wifi Serial1
 #define TIMEOUT 5000
 #define WIFI_BAUDRATE 9600
-#define DEBUG 0
+#define DEBUG 2
 bool initialised = false;
-bool connected = false;
 char address[25];
+
+#define CMD_LEN 250
+char cmd_buf[CMD_LEN];
+int cmd_pos=0;
 
 struct UPLOAD_FILES 
 {
@@ -169,9 +172,9 @@ void upload_file_esp8266(char* remote_file)
 	   if(linepos > 0)
 	   {	
 			//build line
-			String line = "file.writeline([[";
+			String line = "file.writeline([==[";
 			line.concat(line_buffer);
-			line.concat("]])");
+			line.concat("]==])");
 			
 			//write line to ESP8266
 			clearResults();
@@ -216,6 +219,8 @@ void esp8266_reset()
 	clearResults();
 	MYSERIAL.print(F("Webservice ready at: "));
 	MYSERIAL.println(address);
+	
+	initialised = true;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -224,19 +229,162 @@ void esp8266_reset()
 
 void handle_esp8266()
 {
-	if(wifi.available())
+	bool cmd_available = false;
+	while(wifi.available())
 	{
-		//process commands
+		// get char
+		cmd_buf[cmd_pos] = wifi.read();
 		
-		MYSERIAL.write(wifi.read());
+		//check for end of cmd
+		if(cmd_buf[cmd_pos] == '\n')
+		{
+			cmd_buf[cmd_pos+1] = 0;
+			cmd_available = true;
+			break;
+		}
+		//increment char pos
+		cmd_pos++;
+		//check for overflow !
+		if(cmd_pos > CMD_LEN)
+		{
+			cmd_pos=0;
+			MYSERIAL.println("Error: got a too long command from ESP8266 ! ");
+		}
 	}
 	
-}
+	//process commands
+	if(cmd_available)
+	{
+		//move commands
+		if(strncmp(cmd_buf,"MOVE",4)==0)
+		{
+			//split string
+			double coords[3];
+			int index =0;
+			char* ptr = strtok(cmd_buf+5, " ");
+			while(ptr != NULL) 
+			{
+				coords[index] = strtod(ptr,NULL);
+				index++;
+				// naechsten Abschnitt erstellen
+				ptr = strtok(NULL, " ");
+			}
+			//execute move
+			ESP8266_move(coords[0],coords[1],coords[2]);
 
+		}
+		// GETTEMP command
+		if(strncmp(cmd_buf,"GETTEMP",7)==0)
+		{
+			String response = "{\"Temp1\":\"";
+			int tCurr=int(degHotend(0) + 0.5);
+			int tTarget=int(degTargetHotend(0) + 0.5);
+			response.concat(tCurr);
+			response.concat("\",\"Temp1Target\":\"");
+			response.concat(tTarget);
+			response.concat("\",\"Temp2\":\"");
+			#if EXTRUDERS > 1
+				tCurr = int(degHotend(1) + 0.5);
+				tTarget = int(degTargetHotend(1) + 0.5);
+				response.concat(tCurr);
+				response.concat("\",\"Temp2Target\":\"");
+				response.concat(tTarget);
+			#else
+				response.concat("--");
+				response.concat("\",\"Temp2Target\":\"");
+				response.concat("--");
+			#endif
+			response.concat("\",\"Bed\":\"");
+			tCurr=int(degBed() + 0.5);
+			tTarget=int(degTargetBed() + 0.5);
+			response.concat(tCurr);
+			response.concat("\",\"BedTarget\":\"");
+			response.concat(tTarget);
+			response.concat("\"}");
+			
+			wifi.println(response);
+		}
+		//SETTEMP command
+		if(strncmp(cmd_buf,"SETTEMP",7)==0)
+		{
+			//split string
+			int data[2];
+			int index;
+			char* ptr = strtok(cmd_buf+7, " ");
+			while(ptr != NULL) 
+			{
+				data[index] = atoi(ptr);
+				index++;
+				// naechsten Abschnitt erstellen
+				ptr = strtok(NULL, " ");
+			}
+			//set values
+			if(data[0] == 1)
+			{
+				if(data[1] > HEATER_0_MAXTEMP - 15) data[1] =  HEATER_0_MAXTEMP - 15;
+				target_temperature[0] = data[1];
+			}
+			#if EXTRUDERS > 1
+			if(data[0] == 2)
+			{
+				if(data[1] > HEATER_1_MAXTEMP - 15) data[1] =  HEATER_1_MAXTEMP - 15;
+				target_temperature[1] = data[1];
+			}
+			#endif
+			if(data[0] == 3)
+			{
+				if(data[1] > BED_MAXTEMP - 15) data[1] =  BED_MAXTEMP - 15;
+				target_temperature_bed = data[1];
+			}
+		}
+		
+		//reset command
+		cmd_pos=0;
+	}
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper functions
 //////////////////////////////////////////////////////////////////////////////
+
+void ESP8266_move(int x, int y, int z)
+{
+	// modify x
+	if(x != 0)
+	{
+		current_position[X_AXIS] += x;
+		if (min_software_endstops && current_position[X_AXIS] < X_MIN_POS)
+			current_position[X_AXIS] = X_MIN_POS;
+		if (max_software_endstops && current_position[X_AXIS] > X_MAX_POS)
+			current_position[X_AXIS] = X_MAX_POS;
+	}
+	
+	// modify y
+    if(y!=0)
+	{	
+		current_position[X_AXIS] += y;
+		if (min_software_endstops && current_position[X_AXIS] < X_MIN_POS)
+			current_position[X_AXIS] = X_MIN_POS;
+		if (max_software_endstops && current_position[X_AXIS] > X_MAX_POS)
+			current_position[X_AXIS] = X_MAX_POS;	
+	}
+	// modify z
+    if(z!=0)
+	{
+		current_position[X_AXIS] += z;
+		if (min_software_endstops && current_position[X_AXIS] < X_MIN_POS)
+			current_position[X_AXIS] = X_MIN_POS;
+		if (max_software_endstops && current_position[X_AXIS] > X_MAX_POS)
+			current_position[X_AXIS] = X_MAX_POS;	
+    }
+	
+	#ifdef DELTA
+    calculate_delta(current_position);
+    plan_buffer_line(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], current_position[E_AXIS], manual_feedrate[X_AXIS]/60, active_extruder);
+    #else
+    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], manual_feedrate[X_AXIS]/60, active_extruder);
+    #endif
+}
 
 bool searchResults(char *target, long timeout, int dbg)
 {

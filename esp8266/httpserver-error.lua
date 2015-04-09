@@ -1,6 +1,7 @@
 -- httpserver-error.lua
 -- Part of nodemcu-httpserver, handles sending error pages to client.
 -- Author: Marcos Kirsch
+-- Modified: Dominik Wenger
 
 local function getHTTPStatusString(code)
    if code == 404 then return "Not Found" end
@@ -15,7 +16,7 @@ end
 
 return function (connection, args)
    errorString = getHTTPStatusString(args.code)
-   print("Error: " .. args.code .. ": " .. errorString)
+   -- print("Error: " .. args.code .. ": " .. errorString)
    sendHeader(connection, args.code, errorString, "text/html")
    connection:send("<html><head><title>" .. args.code .. " - " .. errorString .. "</title></head><body><h1>" .. args.code .. " - " .. errorString .. "</h1></body></html>\r\n")
 end

@@ -1,5 +1,6 @@
 -- httpserver
 -- Author: Marcos Kirsch
+-- Modified: Dominik Wenger
 
 -- Starts web server in the specified port.
 return function (port)
@@ -44,7 +45,7 @@ return function (port)
             -- print(payload) -- for debugging
             -- parse payload and decide what to serve.
             local req = dofile("httpserver-request.lc")(payload)
-            print("Requested URI: " .. req.request)
+            -- print("Requested URI: " .. req.request)
             if req.methodIsValid then
                if req.method == "GET" then onGet(connection, req.uri)
                else dofile("httpserver-static.lc")(conection, {code=501}) end

@@ -7,7 +7,55 @@
    </head>
    <script>
       var xmlHttp = null;
+	  var refreshTimer = null;
+      function getTemp()
+	  {
+		var url = "/index.lua?gettemp=1";
 
+        xmlHttp = new XMLHttpRequest();
+        xmlHttp.onreadystatechange = processTemp;
+        xmlHttp.open("GET", url, true);
+        xmlHttp.send( null );
+	  }
+	  function processTemp()
+	  {
+		processRequest();
+		if (xmlHttp.readyState == 4) {
+            var data = JSON.parse(xmlHttp.responseText);
+			document.getElementById("measure-value-temp1").innerHTML = data.Temp1 + "&deg;C";
+			document.getElementById("measure-value-temp1").style.width = ((data.Temp1/300)*100)+"%";
+			document.getElementById("target-value-temp1").style.width = ((data.Temp1Target/300)*100)+"%";
+			if(data.Temp2 != "--")
+			{
+				document.getElementById("measure-value-temp2").innerHTML = data.Temp2 + "&deg;C";
+				document.getElementById("measure-value-temp2").style.width = ((data.Temp2/300)*100)+"%";
+				document.getElementById("target-value-temp2").style.width = ((data.Temp2Target/300)*100)+"%";
+				document.getElementById("hotend2").style.display = 'block';
+			}
+			else document.getElementById("hotend2").style.display = 'none';
+			
+			document.getElementById("measure-value-bed").innerHTML = data.Bed + "&deg;C";
+			document.getElementById("measure-value-bed").style.width = ((data.Bed/300)*100)+"%";
+			document.getElementById("target-value-bed").style.width = ((data.BedTarget/300)*100)+"%";
+        }
+	  }
+	  function settemp(heater)
+	  {
+		var url = "/index.lua?heater=" + heater +"&settemp=";
+		var value =0;
+		if(heater == 1) value = document.getElementById("temp1").value;
+		else if(heater==2) value = document.getElementById("temp2").value;
+		else if(heater==3) value = document.getElementById("bed").value;
+		
+		url = url+value;
+
+		xmlHttp = new XMLHttpRequest();
+		xmlHttp.onreadystatechange = processRequest;
+		xmlHttp.open("GET", url, true);
+		xmlHttp.send( null );
+		
+		getTemp();
+	  }
       function moveX(amount)
       {
          var url = "/index.lua?movex=" + amount;
@@ -84,90 +132,186 @@
             }
          }
       }
+	  function isNumberKey(evt){
+		var charCode = (evt.which) ? evt.which : evt.keyCode;
+		if (charCode > 31 && (charCode < 48 || charCode > 57))
+			return false;
+		return true;
+	  }
+	  function autorefresh()
+	  {	
+		if(document.getElementById("autorefresh").checked)
+		{
+			refreshTimer = setInterval(function () {getTemp()},5000);
+		}
+		else
+		{
+			clearInterval(refreshTimer);
+		}
+	  }
+	  window.onload = getTemp;
    </script>
    <body bgcolor="#5f5f5f">
+   <h1> BAM&amp;DICE Controller </h1>
    <div id="remote">
-	  <title> BAM&amp;DICE Controller </title>
       <div id="label" class="start"></div>
-	  <div id="movearea" >
-		<table>
-			<tr>
-				<td></td><td></td><td></td><td></td><td>
-				<a href="#" onclick="moveY(100);" class="button button-y"> <span>Y+100</span> </a>
-				</td><td></td><td></td><td></td><td></td><td></td>
-			</tr>
-			<tr>
-				<td></td><td></td><td></td><td></td><td>
-				<a href="#" onclick="moveY(10);" class="button button-y"> <span>Y+10</span> </a>
-				</td><td></td><td></td><td></td><td></td><td>
-				<a href="#" onclick="moveZ(100);" class="button button-z"> <span>Z+10</span> </a>
-				</td>
-			</tr>
-			<tr>
-				<td></td><td></td><td></td><td></td><td>
-  				<a href="#" onclick="moveY(1);" class="button button-y"> <span>Y+1</span> </a>
-				</td><td></td><td></td><td></td><td></td><td>
-				<a href="#" onclick="moveZ(1);" class="button button-z"> <span>Z+1</span> </a>
-				</td>
-			</tr>
-			<tr>
-				<td></td><td></td><td></td><td></td><td>
-				<a href="#" onclick="moveY(0.1);" class="button button-y"> <span>Y+0.1</span> </a>
-				</td><td></td><td></td><td></td><td></td><td>		
-				<a href="#" onclick="moveZ(0.1);" class="button button-z"> <span>Z+0.1</span> </a>
-				</td>
-			</tr>
-			<tr>
-				<td>
-				<a href="#" onclick="moveX(-100);" class="button button-x"> <span>X-100</span> </a>
-				</td><td>
-				<a href="#" onclick="moveX(-10);" class="button button-x"> <span>X-10</span> </a>
-				</td><td>
-				<a href="#" onclick="moveX(-1);" class="button button-x"> <span>X-1</span> </a>
-				</td><td>
-				<a href="#" onclick="moveX(-0.1);" class="button button-x"> <span>X-0.1</span> </a>
-				</td><td>
- 
-				</td><td>
-				<a href="#" onclick="moveX(0.1);" class="button button-x"> <span>X+0.1</span> </a>
-				</td><td>
-				<a href="#" onclick="moveX(1);" class="button button-x"> <span>X+1</span> </a>
-				</td><td>
-				<a href="#" onclick="moveX(10);" class="button button-x"> <span>X+10</span> </a>
-				</td><td>
-				<a href="#" onclick="moveX(100);" class="button button-x"> <span>X+100</span> </a>
-				</td><td></td>
-			</tr>
-			<tr>
-				<td></td><td></td><td></td><td></td><td>
-				<a href="#" onclick="moveY(-0.1);" class="button button-y"> <span>Y-0.1</span> </a>
-				</td><td></td><td></td><td></td><td></td><td>
-				<a href="#" onclick="moveZ(-0.1);" class="button button-z"> <span>Z-0.1</span> </a>
-				</td>
-			</tr>
-			<tr>
-				<td></td><td></td><td></td><td></td><td>
-				<a href="#" onclick="moveY(-1);" class="button button-y"> <span>Y-1</span> </a>
-				</td><td></td><td></td><td></td><td></td><td>
-  				<a href="#" onclick="moveZ(-1);" class="button button-z"> <span>Z-1</span> </a>
-				</td>
-			</tr>
-			<tr>
-				<td></td><td></td><td></td><td></td><td>
-				<a href="#" onclick="moveY(-10);" class="button button-y"> <span>Y-10</span> </a>
-				</td><td></td><td></td><td></td><td></td><td>
-				<a href="#" onclick="moveZ(-10);" class="button button-z"> <span>Z-10</span> </a>
-				</td>
-			</tr>
-			<tr>
-				<td></td><td></td><td></td><td></td><td>
-				<a href="#" onclick="moveY(-100);" class="button button-y"> <span>Y-100</span> </a>
-				</td><td></td><td></td><td></td><td></td>
-			</tr> 
-		</table>
-	  </div>
-	  <div id="spacer"></div>
+		
+		<div class="tabreiter">
+		<ul>
+			<li>
+			<input type="radio" name="tabreiter-0" checked="checked" id="tabreiter-0-0" />
+			<label for="tabreiter-0-0">Status</label>
+            <div>
+				<table style="width:100%"> 
+					<colgroup> 
+						<col width="17%"> 
+						<col width="70%"> 
+						<col width="5%"> 
+						<col width="8%">
+						</colgroup>
+					<tr> <td align="left">
+					Hotend 1:
+					</td> <td>
+					<div class="temperature" id="hotend">
+						<span style="width: 50%" id="target-value-temp1"></span>
+						<span style="width: 25%" id="measure-value-temp1">25°C</span>
+					</div>
+					</td><td valign="middle">
+					<input id="temp1" maxlength="3" size="3" onkeypress='return isNumberKey(event)' class="temperature">
+					</td> <td>
+					<a href="#" onclick="settemp(1);" class="button"> <span>Set</span> </a>
+					</td> 
+					</tr>			
+					<tr id="hotend2" > <td align="left">	
+					Hotend 2:
+					</td> <td>
+					<div class="temperature" id="hotend">
+						<span style="width: 50%" id="target-value-temp2"></span>
+						<span style="width: 25%" id="measure-value-temp2">25°C</span>
+					</div>
+					</td><td valign="middle">
+					<input id="temp2" maxlength="3" size="3" onkeypress='return isNumberKey(event)' class="temperature">
+					</td><td>
+					<a href="#" onclick="settemp(2);" class="button"> <span>Set</span> </a>
+					</td>
+					</tr>
+					<tr><td align="left">
+					Bed:
+					</td> <td>
+					<div class="temperature" id="bed">
+						<span style="width: 50%" id="target-value-bed"></span>
+						<span style="width: 25%" id="measure-value-bed">25°C</span>
+					</div>
+					</td><td valign="middle">
+					<input id="bed" maxlength="3" size="3" onkeypress='return isNumberKey(event)' class="temperature">
+					</td><td>
+					<a href="#" onclick="settemp(3);" class="button"> <span>Set</span> </a>
+					</td>
+					</tr>
+				</table>
+					
+				<a href="#" onclick="getTemp();" class="button"> <span>Refresh</span> </a>
+				<label><input type="checkbox" onclick="autorefresh();" id="autorefresh"/> Autorefresh</label>
+			</div>
+			</li>
+			<li>
+            <input type="radio" name="tabreiter-0" id="tabreiter-0-1" />
+			<label for="tabreiter-0-1">Movement</label>
+            <div>	  
+				<table>
+					<tr>
+						<td></td><td></td><td></td><td></td><td>
+						<div class="movebutton"> <span>+Y</span> </div>
+						</td><td></td><td></td><td></td><td></td><td>
+						<div class="movebutton"> <span>+Z</span> </div>
+						</td>
+					</tr>
+					<tr>
+						<td></td>
+						<td colspan="2" rowspan="2">
+						<a href="#" onclick="home(1);" class="movebutton"> <span>Home X</span> </a>
+						</td><td></td><td>
+						<a href="#" onclick="moveY(10);" class="movebutton"> <span>10</span> </a>
+						</td><td></td><td colspan="2" rowspan="2">
+						<a href="#" onclick="home(2);" class="movebutton"> <span>Home Y</span> </a>
+						</td><td></td><td>
+						<a href="#" onclick="moveZ(10);" class="movebutton"> <span>10</span> </a>
+						</td>
+					</tr>
+					<tr>
+						<td></td></td></td><td></td><td>
+						<a href="#" onclick="moveY(1);" class="movebutton"> <span>1</span> </a>
+						</td><td></td><td></td><td>
+						<a href="#" onclick="moveZ(1);" class="movebutton"> <span>1</span> </a>
+						</td>
+					</tr>
+					<tr>
+						<td></td><td></td><td></td><td></td><td>
+						<a href="#" onclick="moveY(0.1);" class="movebutton"> <span>0.1</span> </a>
+						</td><td></td><td></td><td></td><td></td><td>		
+						<a href="#" onclick="moveZ(0.1);" class="movebutton"> <span>0.1</span> </a>
+						</td>
+					</tr>
+					<tr>
+						<td>
+						<div class="movebutton"> <span>-X</span> </div>
+						</td><td>
+						<a href="#" onclick="moveX(-10);" class="movebutton"> <span>-10</span> </a>
+						</td><td>
+						<a href="#" onclick="moveX(-1);" class="movebutton"> <span>-1</span> </a>
+						</td><td>
+						<a href="#" onclick="moveX(-0.1);" class="movebutton"> <span>-0.1</span> </a>
+						</td><td>
+		 
+						</td><td>
+						<a href="#" onclick="moveX(0.1);" class="movebutton"> <span>0.1</span> </a>
+						</td><td>
+						<a href="#" onclick="moveX(1);" class="movebutton"> <span>1</span> </a>
+						</td><td>
+						<a href="#" onclick="moveX(10);" class="movebutton"> <span>10</span> </a>
+						</td><td>
+						<div class="movebutton"> <span>+X</span> </div>
+						</td><td></td>
+					</tr>
+					<tr>
+						<td></td><td></td><td></td><td></td><td>
+						<a href="#" onclick="moveY(-0.1);" class="movebutton"> <span>-0.1</span> </a>
+						</td><td></td><td></td><td></td><td></td><td>
+						<a href="#" onclick="moveZ(-0.1);" class="movebutton"> <span>-0.1</span> </a>
+						</td>
+					</tr>
+					<tr>
+						<td></td>
+						<td colspan="2" rowspan="2">
+						<a href="#" onclick="home(3);" class="movebutton"> <span>Home Z</span> </a>
+						</td><td></td><td>
+						<a href="#" onclick="moveY(-1);" class="movebutton"> <span>-1</span> </a>
+						</td><td></td><td colspan="2" rowspan="2">
+						<a href="#" onclick="home(0);" class="movebutton"> <span>Home All</span> </a>
+						</td><td></td><td>
+						<a href="#" onclick="moveZ(-1);" class="movebutton"> <span>-1</span> </a>
+						</td>
+					</tr>
+					<tr>
+						<td></td></td></td><td></td><td>
+						<a href="#" onclick="moveY(-10);" class="movebutton"> <span>-10</span> </a>
+						</td><td></td><td></td><td>
+						<a href="#" onclick="moveZ(-10);" class="movebutton"> <span>-10</span> </a>
+						</td>
+					</tr>
+
+					<tr>
+						<td></td><td></td><td></td><td></td><td>
+						<div class="movebutton"> <span>-Y</span> </div>
+						</td><td></td><td></td><td></td><td></td><td>
+						<div class="movebutton"> <span>-Z</span> </div>
+						</td>
+					</tr> 
+				</table>
+			</div>
+			</li>
+		</ul>
+		</div>
    </div>
    </body>
 </html>
-
