@@ -39,7 +39,7 @@ void check_upload_esp8266(int type);
 void upload_file_esp8266(char* remote_file);
 void esp8266_reset();
 
-void ESP8266_move(int x, int y, int z);
+void ESP8266_move(double x, double y, double z, double e,int f);
 bool searchResults(char *target, long timeout, int dbg);
 void clearResults();
 void debug(char *msg) ;

@@ -48,6 +48,7 @@ struct UPLOAD_FILES base_filenames[] = {
 		{"esp8266/HTTPSE~2.lua","httpserver-error.lua"},
 		{"esp8266/HTTPSE~3.lua","httpserver-request.lua"},
 		{"esp8266/HTTPSE~4.lua","httpserver-static.lua"},
+		{"esp8266/HT6EB5~1.lua","httpserver-upload.lua"},
 		{"esp8266/b64.lua","b64.lua"},
 };
 
@@ -259,22 +260,22 @@ void handle_esp8266()
 		if(strncmp(cmd_buf,"MOVE",4)==0)
 		{
 			//split string
-			double coords[3];
+			double data[5];
 			int index =0;
 			char* ptr = strtok(cmd_buf+5, " ");
 			while(ptr != NULL) 
 			{
-				coords[index] = strtod(ptr,NULL);
+				data[index] = strtod(ptr,NULL);
 				index++;
 				// naechsten Abschnitt erstellen
 				ptr = strtok(NULL, " ");
 			}
 			//execute move
-			ESP8266_move(coords[0],coords[1],coords[2]);
+			ESP8266_move(data[0],data[1],data[2],data[3],data[4]);
 
 		}
 		// GETTEMP command
-		if(strncmp(cmd_buf,"GETTEMP",7)==0)
+		else if(strncmp(cmd_buf,"GETTEMP",7)==0)
 		{
 			String response = "{\"Temp1\":\"";
 			int tCurr=int(degHotend(0) + 0.5);
@@ -305,7 +306,7 @@ void handle_esp8266()
 			wifi.println(response);
 		}
 		//SETTEMP command
-		if(strncmp(cmd_buf,"SETTEMP",7)==0)
+		else if(strncmp(cmd_buf,"SETTEMP",7)==0)
 		{
 			//split string
 			int data[2];
@@ -337,7 +338,30 @@ void handle_esp8266()
 				target_temperature_bed = data[1];
 			}
 		}
-		
+		//HOME command
+		else if(strncmp(cmd_buf,"HOME",4)==0)
+		{
+			int axis = atoi(cmd_buf+5);
+			switch(axis)
+			{
+				case 0:
+					enquecommand_P(PSTR("G28"));
+					break;
+				case 1:
+					enquecommand_P(PSTR("G28 X"));
+					break;
+				case 2:
+					enquecommand_P(PSTR("G28 Y"));
+					break;
+				case 3:
+					enquecommand_P(PSTR("G28 Z"));
+					break;
+			}
+		}
+		else
+		{
+			MYSERIAL.println(cmd_buf);
+		}
 		//reset command
 		cmd_pos=0;
 	}
@@ -347,7 +371,7 @@ void handle_esp8266()
 // Helper functions
 //////////////////////////////////////////////////////////////////////////////
 
-void ESP8266_move(int x, int y, int z)
+void ESP8266_move(double x, double y, double z, double e,int f)
 {
 	// modify x
 	if(x != 0)
@@ -362,27 +386,31 @@ void ESP8266_move(int x, int y, int z)
 	// modify y
     if(y!=0)
 	{	
-		current_position[X_AXIS] += y;
-		if (min_software_endstops && current_position[X_AXIS] < X_MIN_POS)
-			current_position[X_AXIS] = X_MIN_POS;
-		if (max_software_endstops && current_position[X_AXIS] > X_MAX_POS)
-			current_position[X_AXIS] = X_MAX_POS;	
+		current_position[Y_AXIS] += y;
+		if (min_software_endstops && current_position[Y_AXIS] < Y_MIN_POS)
+			current_position[Y_AXIS] = Y_MIN_POS;
+		if (max_software_endstops && current_position[Y_AXIS] > Y_MAX_POS)
+			current_position[Y_AXIS] = Y_MAX_POS;	
 	}
 	// modify z
     if(z!=0)
 	{
-		current_position[X_AXIS] += z;
-		if (min_software_endstops && current_position[X_AXIS] < X_MIN_POS)
-			current_position[X_AXIS] = X_MIN_POS;
-		if (max_software_endstops && current_position[X_AXIS] > X_MAX_POS)
-			current_position[X_AXIS] = X_MAX_POS;	
+		current_position[Z_AXIS] += z;
+		if (min_software_endstops && current_position[Z_AXIS] < Z_MIN_POS)
+			current_position[Z_AXIS] = Z_MIN_POS;
+		if (max_software_endstops && current_position[Z_AXIS] > Z_MAX_POS)
+			current_position[Z_AXIS] = Z_MAX_POS;	
     }
-	
+	// modify e
+    if(e!=0)
+	{
+		current_position[E_AXIS] += e;
+    }
 	#ifdef DELTA
     calculate_delta(current_position);
-    plan_buffer_line(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], current_position[E_AXIS], manual_feedrate[X_AXIS]/60, active_extruder);
+    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS],f*feedmultiply/60/100.0, active_extruder);
     #else
-    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], manual_feedrate[X_AXIS]/60, active_extruder);
+    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], f*feedmultiply/60/100.0, active_extruder);
     #endif
 }
 
