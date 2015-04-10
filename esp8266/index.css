@@ -33,11 +33,11 @@ body {
 
 
 .movebutton {
-    width:80px;
+    width:75px;
 	padding: 0px 2px;
 	display: inline-block;
-	border-style: none;
-	color: rgba(192, 192, 192, 0.5);
+	border-style: outset;
+	color: rgba(100, 100, 100, 1);
 	text-decoration: none;
 	border-radius: 10px;
 	text-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
@@ -45,10 +45,44 @@ body {
 	font-weight: bold;
 	background-color: #CCC;
 	-moz-box-shadow: 0 10px rgba(0, 0, 0, 0.25);
-	box-shadow: 0 10px rgba(0, 0, 0, 0.25);
+	box-shadow: 0 5px rgba(0, 0, 0, 0.25);
 	position: relative;
+	border-width: 2px;
+	border-color: #fff;
 }
 
+.movebutton:active {
+  border-style: inset;
+}
+
+.button {
+	padding: 0px 2px;
+	display: inline-block;
+	border-style: outset;
+	color: rgba(100, 100, 100, 1);
+	text-decoration: none;
+	border-radius: 10px;
+	text-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
+	font-size: 28px;
+	font-weight: bold;
+	background-color: #CCC;
+	-moz-box-shadow: 0 10px rgba(0, 0, 0, 0.25);
+	box-shadow: 0 5px rgba(0, 0, 0, 0.25);
+	position: relative;
+	border-width: 2px;
+	border-color: #fff;
+}
+
+.button:active {
+  border-style: inset;
+}
+
+.movelabel {
+	box-shadow: 0px 0px rgba(0, 0, 0, 0.25);
+	border-style: inset;
+	border-width: 2px;
+	border-color: #fff;
+}
 
 #label {
 	font-family: "Lucida Grande", Lucida, Verdana, sans-serif;
@@ -130,13 +164,11 @@ body {
     font-family: Arial, Sans-serif;
 	font-size: 1em;
 	font-weight: 400;
-    color: rgba(192, 192, 192, 0.5);
+    color: rgba(80, 80, 80, 1);
 	text-decoration: none;
-	text-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
 	font-size: 30px;
 	font-weight: bold;
 	background-color: #CCC;
-	-moz-box-shadow: 0 10px rgba(0, 0, 0, 0.25);
 }
  
 .tabreiter li
@@ -163,9 +195,8 @@ body {
  
 .tabreiter input[type="radio"] + label
 {
-    margin: 0 2px 0 0;
     padding: 0 18px;
-    line-height: 32px;
+    margin-top: 5px;
     background: #f1f1f1;
     text-align: center;
     border-radius: 5px 5px 0 0;

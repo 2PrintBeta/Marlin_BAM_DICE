@@ -40,17 +40,25 @@ return function (port)
             --print("Thread created", connectionThread)
             coroutine.resume(connectionThread, connection, uri.args)
          end
-
+		
+		 local function onPost(connection, payload)
+			
+			local fileServeFunction = dofile("httpserver-upload.lc")
+			
+			connectionThread = coroutine.create(fileServeFunction)
+            coroutine.resume(connectionThread, connection, payload)
+		  end
+		 
          local function onReceive(connection, payload)
-            -- print(payload) -- for debugging
             -- parse payload and decide what to serve.
             local req = dofile("httpserver-request.lc")(payload)
             -- print("Requested URI: " .. req.request)
             if req.methodIsValid then
                if req.method == "GET" then onGet(connection, req.uri)
-               else dofile("httpserver-static.lc")(conection, {code=501}) end
+			   elseif req.method == "POST" then onPost(connection,payload)
+			   else dofile("httpserver-error.lc")(connection, {code=501}) end
             else
-               dofile("httpserver-static.lc")(conection, {code=400})
+               dofile("httpserver-error.lc")(connection, {code=400})
             end
          end
 
