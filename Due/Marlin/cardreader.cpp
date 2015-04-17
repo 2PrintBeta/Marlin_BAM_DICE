@@ -483,7 +483,16 @@ void CardReader::write_command(char *buf)
     SERIAL_ERRORLNPGM(MSG_SD_ERR_WRITE_TO_FILE);
   }
 }
-
+void CardReader::write(char *buf)
+{
+	file.writeError = false;
+	file.write(buf);
+	if (file.writeError)
+	{
+		SERIAL_ERROR_START;
+		SERIAL_ERRORLNPGM(MSG_SD_ERR_WRITE_TO_FILE);
+	}
+}
 
 void CardReader::checkautostart(bool force)
 {

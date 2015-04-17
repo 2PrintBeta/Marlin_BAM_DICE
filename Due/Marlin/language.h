@@ -186,7 +186,8 @@
 	#define MSG_BABYSTEP_Y "Babystep Y"
 	#define MSG_BABYSTEP_Z "Babystep Z"
 	#define MSG_ENDSTOP_ABORT "Endstop abort"
-
+    #define MSG_WIFI "Wifi"
+	#define MSG_WIFI_LOAD "Load cfg"
 // Serial Console Messages
 
 	#define MSG_Enqueing "enqueing \""

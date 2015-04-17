@@ -3074,10 +3074,20 @@ void process_commands()
     }
     break;
 	#ifdef HAVE_ESP8266
-	case 888:  //check if there is a need to upload files to ESP8266, S defines which files to upload
+	case 880:  //get network state
 	{
-		if(code_seen('S')) check_upload_esp8266(code_value());	
-		else check_upload_esp8266(0);
+		SERIAL_ECHO_START;
+		SERIAL_ECHO("IP: ");
+		SERIAL_ECHOLN(esp8266_ip());
+		SERIAL_ECHO("MODE: ");
+		SERIAL_ECHOLN(esp8266_mode());
+		SERIAL_ECHO("SSID: ");
+		SERIAL_ECHOLN(esp8266_ssid());		 
+		break;
+	}
+	case 881:  //load wifi config from SD
+	{
+		esp8266_load_cfg();
 		break;
 	}
 	#endif

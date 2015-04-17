@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <link rel="stylesheet" type="text/css" href="index.css">
+      <meta charset="UTF-8">
+      <title>BAM&amp;DICE Config </title>
+   </head>
+   <script>
+      var xmlHttp = null;
+	  // reboot
+	  function reboot()
+	  {
+		var url = "/reboot?reboot=1";
+
+		xmlHttp = new XMLHttpRequest();
+		xmlHttp.open("GET", url, true);
+		xmlHttp.send( null );
+	  }
+	</script>
+   <body bgcolor="#5f5f5f">
+   <h1> BAM&amp;DICE Config </h1>
+   <div id="remote">
+      <div id="label" class="start"></div>
+		<ul>
+			<!-- This is the configuration Tab -->
+			<form method="POST">
+			  <label>Name</label>
+			  <input type="text" name="SSID" class="form-control" placeholder="Enter SSID" value="{SSID}">
+			  <br/>
+			  <label>Password</label>
+			  <input type="password" name="Password" class="form-control" placeholder="Password">
+			  <br/>
+			  <label>Wifi Mode</label>
+			  <select name="STATION" size="1" >
+					<option {MODE_STATION} value="yes">STATION</option>
+					<option {MODE_AP} value="no">ACCESSPOINT</option>
+			  </select>  
+			  <br/>
+			  <label>Wifi Sec</label>
+			  <select name="SECURITY" size="1" >
+					<option {SEC_OPEN} >OPEN</option>
+					<option {SEC_WEP} >WEP</option>
+					<option {SEC_WPA} >WPA_PSK</option>
+					<option {SEC_WPA2} >WPA2_PSK</option>
+					<option {SEC_WPA12} >WPA_WPA2_PSK</option>
+			  </select>
+			  <br/>
+			  <button type="submit" class="btn btn-success">Save</button>
+			</form>
+			 <br/>
+			  <button type="button" onclick="reboot()">Reboot </button>
+		</ul>
+   </div>
+   </body>
+</html>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <link rel="stylesheet" type="text/css" href="index.css">
+      <meta charset="UTF-8">
+      <title>BAM&amp;DICE Control </title>
+   </head>
+   <script>
+      var xmlHttp = null;
+	  var refreshTimer = null;
+	  // request temperature values 
+	  function getTemp()
+	  {
+		var url = "/get?temp=1";
+
+		xmlHttp = new XMLHttpRequest();
+		xmlHttp.onreadystatechange = processTemp;
+		xmlHttp.open("GET", url, true);
+		xmlHttp.send( null );
+	  }
+	  // handle recieved temperature values 
+	  function processTemp()
+	  {
+		processRequest();
+		if (xmlHttp.readyState == 4) {
+			var data = JSON.parse(xmlHttp.responseText);
+			document.getElementById("measure-value-temp1").innerHTML = data.Temp1 + "&deg;C";
+			document.getElementById("measure-value-temp1").style.width = ((data.Temp1/300)*100)+"%";
+			document.getElementById("target-value-temp1").style.width = ((data.Temp1Target/300)*100)+"%";
+			if(data.Temp2 != "--")
+			{
+				document.getElementById("measure-value-temp2").innerHTML = data.Temp2 + "&deg;C";
+				document.getElementById("measure-value-temp2").style.width = ((data.Temp2/300)*100)+"%";
+				document.getElementById("target-value-temp2").style.width = ((data.Temp2Target/300)*100)+"%";
+				document.getElementById("hotend2").style.display = 'block';
+			}
+			else document.getElementById("hotend2").style.display = 'none';
+			
+			document.getElementById("measure-value-bed").innerHTML = data.Bed + "&deg;C";
+			document.getElementById("measure-value-bed").style.width = ((data.Bed/300)*100)+"%";
+			document.getElementById("target-value-bed").style.width = ((data.BedTarget/300)*100)+"%";
+		}
+	  }
+	  // set new target temperatures, updates temperature values 
+	  function settemp(heater)
+	  {
+		var url = "/set?heater=" + heater +"&temp=";
+		var value =0;
+		if(heater == 1) value = document.getElementById("temp1").value;
+		else if(heater==2) value = document.getElementById("temp2").value;
+		else if(heater==3) value = document.getElementById("bed").value;
+		
+		url = url+value;
+
+		xmlHttp = new XMLHttpRequest();
+		xmlHttp.onreadystatechange = processRequest;
+		xmlHttp.open("GET", url, true);
+		xmlHttp.send( null );
+		
+		getTemp();
+	  }
+	  // move any axis by an amount
+	  function move(amount,axis,speed)
+	  {
+		 var url = "/set?move=" + amount + "&axis="+axis+"&speed="+speed;
+
+		 xmlHttp = new XMLHttpRequest();
+		 xmlHttp.onreadystatechange = processRequest;
+		 xmlHttp.open("GET", url, true);
+		 xmlHttp.send( null );
+	  }
+	  function move_axis(amount,axis)
+	  {
+		 move(amount,axis,document.getElementById("move_speed").value);
+	  }
+	  //move extruder
+	  function extrude()
+	  {
+		move(document.getElementById("extrude_amount").value,4,document.getElementById("extrude_speed").value);
+	  }
+	  function retract()
+	  {
+		move(document.getElementById("retract_amount").value*-1,4,document.getElementById("retract_speed").value);
+	  }
+	  // home axes, 0 is all axis 
+	  function home(axis)
+	  {
+		var url = "/set?home=" + axis;
+
+		xmlHttp = new XMLHttpRequest();
+		xmlHttp.onreadystatechange = processRequest;
+		xmlHttp.open("GET", url, true);
+		xmlHttp.send( null );
+	  }
+	  // Generic request processing - updates the indicator 
+	  function processRequest()
+	  {
+		 if(xmlHttp.readyState == 0)
+		 {
+			document.getElementById("label").innerHTML = 'Initalizing...';
+			document.getElementById("label").className = "initalizing";
+		 }
+		 else if(xmlHttp.readyState == 1)
+		 {
+			document.getElementById("label").innerHTML = 'Server connection established.';
+			document.getElementById("label").className = "connection";
+		 }
+		 else if(xmlHttp.readyState == 2)
+		 {
+			document.getElementById("label").innerHTML = 'Request received.';
+			document.getElementById("label").className = "received";
+		 }
+		 else if(xmlHttp.readyState == 3)
+		 {
+			document.getElementById("label").innerHTML = 'Processing request.';
+			document.getElementById("label").className = "processing";
+		 }
+		 else if(xmlHttp.readyState == 4)
+		 {
+			if(xmlHttp.status == 200)
+			{
+			   document.getElementById("label").innerHTML = xmlHttp.responseText;
+			   document.getElementById("label").className = "ok";
+			   sleep(300);
+			   document.getElementById("label").className = "start";
+			}
+			else if(xmlHttp.status == 400)
+			{
+			   document.getElementById("label").innerHTML = 'Bad request.';
+			   document.getElementById("label").className = "bad";
+			}
+		 }
+	  }
+	  // Sleep
+	  function sleep(milliseconds){
+		 var start = new Date().getTime();
+		 for (var i = 0; i < 1e7; i++)
+		 {
+			if ((new Date().getTime() - start) > milliseconds)
+			{
+			   break;
+			}
+		 }
+	  }
+	  // only allows number keys 
+	  function isNumberKey(evt){
+		var charCode = (evt.which) ? evt.which : evt.keyCode;
+		if (charCode == 8 || charCode == 46 || charCode == 37 || charCode == 39) 
+			return true;
+		if (charCode > 31 && (charCode < 48 || charCode > 57))
+			return false;
+		return true;
+	  }
+	  // update temperature every 5 seconds 
+	  function autorefresh()
+	  {	
+		if(document.getElementById("autorefresh").checked)
+		{
+			refreshTimer = setInterval(function () {getTemp()},5000);
+		}
+		else
+		{
+			clearInterval(refreshTimer);
+		}
+	  }
+	  		
+  	  function uploadFile()
+	  {
+		// unser File Objekt
+		var file = document.getElementById("fileA").files[0];
+		
+		if(!file)
+			return;
+			
+		//FormData Objekt erzeugen
+		var formData = new FormData();
+		//XMLHttpRequest Objekt erzeugen
+		xmlHttp = new XMLHttpRequest();
+		//Fügt dem formData Objekt unser File Objekt hinzu
+		formData.append("file",file);
+		
+		xmlHttp.onreadystatechange = function(e) {
+			if(xmlHttp.readyState == 4)
+			{
+				alert(xmlHttp.responseText);
+			}
+		};
+		xmlHttp.open("POST", "/upload");
+		xmlHttp.send(formData);
+	  }
+	
+	  // make sure temperture is correct on page load 
+	  window.onload = getTemp;
+   </script>
+   <body bgcolor="#5f5f5f">
+   <h1> BAM&amp;DICE Controller </h1>
+   <div id="remote">
+      <div id="label" class="start"></div>
+		
+		<div class="tabreiter">
+		<ul>
+			<!-- This is the Extruder Tab -->
+			<li>
+			<input type="radio" name="tabreiter-0" checked="checked" id="tabreiter-0-0" />
+			<label for="tabreiter-0-0">Extruder</label>
+            <div>
+				<!-- Table with Temperature elements -->
+				<table style="width:100%"> 
+					<colgroup> 
+						<col width="17%"> 
+						<col width="70%"> 
+						<col width="5%"> 
+						<col width="8%">
+						</colgroup>
+					<tr> <td align="left">
+					Hotend 1:
+					</td> <td>
+					<div class="temperature" id="hotend">
+						<span style="width: 50%" id="target-value-temp1"></span>
+						<span style="width: 25%" id="measure-value-temp1">25°C</span>
+					</div>
+					</td><td valign="middle">
+					<input id="temp1" maxlength="3" size="1" onkeypress='return isNumberKey(event)' class="temperature">
+					</td> <td>
+					<a href="#" onclick="settemp(1);" class="button"> <span>Set</span> </a>
+					</td> 
+					</tr>			
+					<tr id="hotend2" > <td align="left">	
+					Hotend 2:
+					</td> <td>
+					<div class="temperature" id="hotend">
+						<span style="width: 50%" id="target-value-temp2"></span>
+						<span style="width: 25%" id="measure-value-temp2">25°C</span>
+					</div>
+					</td><td valign="middle">
+					<input id="temp2" maxlength="3" size="1" onkeypress='return isNumberKey(event)' class="temperature">
+					</td><td>
+					<a href="#" onclick="settemp(2);" class="button"> <span>Set</span> </a>
+					</td>
+					</tr>
+					<tr><td align="left">
+					Bed:
+					</td> <td>
+					<div class="temperature" id="bed">
+						<span style="width: 50%" id="target-value-bed"></span>
+						<span style="width: 25%" id="measure-value-bed">25°C</span>
+					</div>
+					</td><td valign="middle">
+					<input id="bed" maxlength="3" size="1" onkeypress='return isNumberKey(event)' class="temperature">
+					</td><td>
+					<a href="#" onclick="settemp(3);" class="button"> <span>Set</span> </a>
+					</td>
+					</tr>
+				</table>
+				<!-- Refresh / autorefresh -->
+				<a href="#" onclick="getTemp();" class="button"> <span>Refresh</span> </a>
+				<label><input type="checkbox" onclick="autorefresh();" id="autorefresh"/> Autorefresh</label>
+				
+				<!-- Table with Extruder buttons -->
+				<center>
+				<table>
+					<tr>
+						<th> </th> <th> Amount </th> <th> Speed </th>
+					</tr>
+					<tr>
+						<td> 
+						<a href="#" onclick="extrude();" class="button"> <span>Extrude</span> </a>
+						</td> 
+						<td>
+						<input id="extrude_amount" value="5" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="temperature">
+						</td>
+						<td>
+						<input id="extrude_speed" value="30" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="temperature">
+						</td>
+					</tr>
+					<tr>
+						<td> 
+						<a href="#" onclick="retract();" class="button"> <span>Retract</span> </a>
+						</td> 
+						<td>
+						<input id="retract_amount" value="5" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="temperature">
+						</td>
+						<td>
+						<input id="retract_speed" value="30" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="temperature">
+						</td>
+					</td>
+					</tr>
+				</table>
+				</center>
+			</div>
+			</li>
+			<!-- This is the Axis Tab -->
+			<li>
+            <input type="radio" name="tabreiter-0" id="tabreiter-0-1" />
+			<label for="tabreiter-0-1">Axes</label>
+            <div>	 
+				<!-- Table with all move buttons -->
+				<table>
+					<tr>
+						<td>
+						<input id="move_speed" value="300" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="temperature">
+						</td><td></td><td></td><td></td><td>
+						<div class="movebutton movelabel"> <span>+Y</span> </div>
+						</td><td></td><td></td><td></td><td></td><td>
+						<div class="movebutton movelabel"> <span>+Z</span> </div>
+						</td>
+					</tr>
+					<tr>
+						<td></td>
+						<td colspan="2" rowspan="2">
+						<a href="#" onclick="home(1);" class="movebutton"> <span>Home X</span> </a>
+						</td><td></td><td>
+						<a href="#" onclick="move(10,2);" class="movebutton"> <span>10</span> </a>
+						</td><td></td><td colspan="2" rowspan="2">
+						<a href="#" onclick="home(2);" class="movebutton"> <span>Home Y</span> </a>
+						</td><td></td><td>
+						<a href="#" onclick="move(10,3);" class="movebutton"> <span>10</span> </a>
+						</td>
+					</tr>
+					<tr>
+						<td></td></td></td><td></td><td>
+						<a href="#" onclick="move(1,2);" class="movebutton"> <span>1</span> </a>
+						</td><td></td><td></td><td>
+						<a href="#" onclick="move(1,3);" class="movebutton"> <span>1</span> </a>
+						</td>
+					</tr>
+					<tr>
+						<td></td><td></td><td></td><td></td><td>
+						<a href="#" onclick="move(0.1,2);" class="movebutton"> <span>0.1</span> </a>
+						</td><td></td><td></td><td></td><td></td><td>		
+						<a href="#" onclick="move(0.1,3);" class="movebutton"> <span>0.1</span> </a>
+						</td>
+					</tr>
+					<tr>
+						<td>
+						<div class="movebutton movelabel"> <span>-X</span> </div>
+						</td><td>
+						<a href="#" onclick="move(-10,1);" class="movebutton"> <span>-10</span> </a>
+						</td><td>
+						<a href="#" onclick="move(-1,1);" class="movebutton"> <span>-1</span> </a>
+						</td><td>
+						<a href="#" onclick="move(-0.1,1);" class="movebutton"> <span>-0.1</span> </a>
+						</td><td>
+		 
+						</td><td>
+						<a href="#" onclick="move(0.1,1);" class="movebutton"> <span>0.1</span> </a>
+						</td><td>
+						<a href="#" onclick="move(1,1);" class="movebutton"> <span>1</span> </a>
+						</td><td>
+						<a href="#" onclick="move(10,1);" class="movebutton"> <span>10</span> </a>
+						</td><td>
+						<div class="movebutton movelabel"> <span>+X</span> </div>
+						</td><td></td>
+					</tr>
+					<tr>
+						<td></td><td></td><td></td><td></td><td>
+						<a href="#" onclick="move(-0.1,2);" class="movebutton"> <span>-0.1</span> </a>
+						</td><td></td><td></td><td></td><td></td><td>
+						<a href="#" onclick="move(-0.1,3);" class="movebutton"> <span>-0.1</span> </a>
+						</td>
+					</tr>
+					<tr>
+						<td></td>
+						<td colspan="2" rowspan="2">
+						<a href="#" onclick="home(3);" class="movebutton"> <span>Home Z</span> </a>
+						</td><td></td><td>
+						<a href="#" onclick="move(-1,2);" class="movebutton"> <span>-1</span> </a>
+						</td><td></td><td colspan="2" rowspan="2">
+						<a href="#" onclick="home(0);" class="movebutton"> <span>Home All</span> </a>
+						</td><td></td><td>
+						<a href="#" onclick="move(-1,3);" class="movebutton"> <span>-1</span> </a>
+						</td>
+					</tr>
+					<tr>
+						<td></td></td></td><td></td><td>
+						<a href="#" onclick="move(-10,2);" class="movebutton"> <span>-10</span> </a>
+						</td><td></td><td></td><td>
+						<a href="#" onclick="move(-10,3);" class="movebutton"> <span>-10</span> </a>
+						</td>
+					</tr>
+
+					<tr>
+						<td></td><td></td><td></td><td></td><td>
+						<div class="movebutton movelabel"> <span>-Y</span> </div>
+						</td><td></td><td></td><td></td><td></td><td>
+						<div class="movebutton movelabel"> <span>-Z</span> </div>
+						</td>
+					</tr> 
+				</table>
+			</div>
+			</li>
+			<!-- This is the Print Tab -->
+			<li>
+            <input type="radio" name="tabreiter-0" id="tabreiter-0-2" />
+			<label for="tabreiter-0-2">Print</label>
+            <div>	 
+				<form action="" method="post" enctype="multipart/form-data">
+					<input name="file" type="file" id="fileA"/>
+					<input name="upload" value="Upload" type="button" onclick="uploadFile();" />
+				</form>
+				<div>
+					<progress id="progress" style="margin-top:10px"></progress> <span id="prozent"></span>
+				</div>
+			</div>
+			</li>
+		
+			
+		</ul>
+		</div>
+   </div>
+   </body>
+</html>

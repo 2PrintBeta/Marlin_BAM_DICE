@@ -8,6 +8,10 @@
 #include "stepper.h"
 #include "ConfigurationStore.h"
 
+#ifdef HAVE_ESP8266
+#include "esp8266.h"
+#endif
+
 int8_t encoderDiff; /* encoderDiff is updated from interrupt context and added to encoderPosition every LCD update */
 
 /* Configuration settings */
@@ -60,6 +64,10 @@ static void lcd_set_contrast();
 #endif
 static void lcd_control_retract_menu();
 static void lcd_sdcard_menu();
+#ifdef HAVE_ESP8266
+static void lcd_wifi_menu();
+#endif
+
 
 static void lcd_quick_feedback();//Cause an LCD refresh, and give the user visual or audible feedback that something has happened
 
@@ -68,6 +76,7 @@ static void menu_action_back(menuFunc_t data);
 static void menu_action_submenu(menuFunc_t data);
 static void menu_action_gcode(const char* pgcode);
 static void menu_action_function(menuFunc_t data);
+static void menu_action_dummy(menuFunc_t data);
 static void menu_action_sdfile(const char* filename, char* longFilename);
 static void menu_action_sddirectory(const char* filename, char* longFilename);
 static void menu_action_setting_edit_bool(const char* pstr, bool* ptr);
@@ -273,6 +282,9 @@ static void lcd_main_menu()
         MENU_ITEM(submenu, MSG_PREPARE, lcd_prepare_menu);
     }
     MENU_ITEM(submenu, MSG_CONTROL, lcd_control_menu);
+#ifdef HAVE_ESP8266
+	MENU_ITEM(submenu, MSG_WIFI, lcd_wifi_menu);
+#endif
 #ifdef SDSUPPORT
     if (card.cardOK)
     {
@@ -750,6 +762,20 @@ static void lcd_move_menu()
     END_MENU();
 }
 
+#ifdef HAVE_ESP8266
+static void lcd_wifi_menu()
+{
+	START_MENU();
+	MENU_ITEM(back, MSG_MAIN, lcd_main_menu);
+	
+	MENU_ITEM(dummy,esp8266_ip(),lcd_main_menu);
+	MENU_ITEM(dummy,esp8266_mode(),lcd_main_menu);
+	MENU_ITEM(dummy,esp8266_ssid(),lcd_main_menu);
+	MENU_ITEM(gcode,MSG_WIFI_LOAD,"M881");	
+	END_MENU();
+}
+#endif
+
 static void lcd_control_menu()
 {
     START_MENU();
@@ -1083,6 +1109,9 @@ static void lcd_quick_feedback()
 }
 
 /** Menu action functions **/
+static void menu_action_dummy(menuFunc_t data)
+{
+}
 static void menu_action_back(menuFunc_t data)
 {
     currentMenu = data;

@@ -25,38 +25,22 @@
 #include "cardreader.h"
 #ifdef HAVE_ESP8266
 
+#define DIN A3
+#define DOUT A4
+
 #define wifi Serial1
 #define TIMEOUT 5000
-#define WIFI_BAUDRATE 9600
+#define WIFI_BAUDRATE 1000000
 #define DEBUG 2
-bool initialised = false;
-char address[25];
+
+#define STORAGE_SIZE 50
+char address[STORAGE_SIZE] = {0};
+char mode[STORAGE_SIZE] = {0};
+char ssid[STORAGE_SIZE] = {0};
 
 #define CMD_LEN 250
 char cmd_buf[CMD_LEN];
 int cmd_pos=0;
-
-struct UPLOAD_FILES 
-{
-	char* local_filename;
-	char* remote_filename;
-};
-
-struct UPLOAD_FILES base_filenames[] = {
-		{"esp8266/init.lua","init.lua"},
-		{"esp8266/HTTPSE~1.lua","httpserver.lua"},
-		{"esp8266/HTTPSE~2.lua","httpserver-error.lua"},
-		{"esp8266/HTTPSE~3.lua","httpserver-request.lua"},
-		{"esp8266/HTTPSE~4.lua","httpserver-static.lua"},
-		{"esp8266/HT6EB5~1.lua","httpserver-upload.lua"},
-		{"esp8266/b64.lua","b64.lua"},
-};
-
-struct UPLOAD_FILES html_filenames[]  = {
-		{"esp8266/INDEX~1.HTM","http/index.html"},
-		{"esp8266/index.css","http/index.css"},
-		{"esp8266/index.lua","http/index.lua"},
-};
 
 static float manual_feedrate[] = MANUAL_FEEDRATE;
 
@@ -68,160 +52,28 @@ void init_esp8266()
 {
 	// init wifi 
 	wifi.begin(WIFI_BAUDRATE);
-	wifi.setTimeout(TIMEOUT); 
-
+	wifi.setTimeout(TIMEOUT);
 	clearResults();
+		
+	strcpy(address,"NONE");
+	strcpy(mode,"MODE: ");
+	strcpy(ssid,"SSID: ");
 	
-    esp8266_reset();
+	
+	//TODO reset
 }
 
-void check_upload_esp8266(int type)
+char* esp8266_ip()
 {
-	if (card.cardOK)
-	{
-		MYSERIAL.println(F("SD Card found"));
-		bool uploaded = false;
-		
-		// all or base files
-		if(type == 0 || type == 1)
-		{
-			for(int i=0; i < sizeof(base_filenames)/sizeof(base_filenames[0]); i++)
-			{
-				card.openFile(base_filenames[i].local_filename,true);
-				if(card.isFileOpen())
-				{
-					// upload
-					upload_file_esp8266(base_filenames[i].remote_filename);
-					card.closefile();
-					uploaded = true;
-				}
-			}
-		}
-		
-		//all or html files
-		if(type == 0 || type == 2)
-		{
-			for(int i=0; i < sizeof(html_filenames)/sizeof(html_filenames[0]); i++)
-			{
-				card.openFile(html_filenames[i].local_filename,true);
-				if(card.isFileOpen())
-				{
-					// upload
-					upload_file_esp8266(html_filenames[i].remote_filename);
-					card.closefile();
-					uploaded = true;
-				}
-			}
-		}
-
-		
-		// if we uploaded something, we need to restart
-		if(uploaded)
-		{
-			esp8266_reset();
-		}		
-		
-	}
-	else
-	{
-		MYSERIAL.println(F("No SD Card found!"));
-	}
+	return address;
 }
-
-void upload_file_esp8266(char* remote_file)
+char* esp8266_ssid()
 {
-	MYSERIAL.print("uploading: ");
-	MYSERIAL.println(remote_file);
-	char line_buffer[250];
-	char my_char;
-	//open file
-	clearResults();
-	wifi.print(F("file.open(\""));
-	wifi.print(remote_file);
-	wifi.println(F("\",\"w\")"));
-	searchResults("\n>",1000,DEBUG);
-	
-	while(!card.eof())
-	{
-	   //get a line of chars
-	   int linepos =0;
-	   while(1)
-	   {
-	      
-	   	  if(linepos > 240)
-		  {
-			MYSERIAL.print("Too long line detected, the following file might be corrupted: ");
-			MYSERIAL.println(remote_file);
-			line_buffer[linepos] =0;
-			break;
-		  }
-		  
-		  int16_t n=card.get();
-		  my_char = (char)n;
-		  
-		  if(my_char== '\n' || my_char=='\r' || card.eof())
-		  {
-			line_buffer[linepos] =0;
-			break;
-		  }
-		  // store char
-		  line_buffer[linepos] = my_char;
-		  //go to next
-		  linepos++;
-	   } 
-	   
-	   if(linepos > 0)
-	   {	
-			//build line
-			String line = "file.writeline([==[";
-			line.concat(line_buffer);
-			line.concat("]==])");
-			
-			//write line to ESP8266
-			clearResults();
-			wifi.println(line);
-			searchResults((char*)line.c_str(),1000,DEBUG);
-			searchResults("\n>",1000,DEBUG);		
-		}
-	}
-
-	//close file 
-	clearResults();
-	wifi.println(F("file.close()"));
-	searchResults("\n>",1000,DEBUG);		
+	return ssid;
 }
-
-
-void esp8266_reset()
+char* esp8266_mode()
 {
-	wifi.println(F("node.restart()"));
-	if(!searchResults("NodeMCU",5000,DEBUG))
-	{
-		initialised = false;
-		MYSERIAL.println(F("Failed to restart wifi"));
-		return;
-	}
-	clearResults();
-	// set SSID / pwd
-	wifi.print(F("wifi.sta.config(\""));
-	wifi.print(ESP8266_SSID);
-	wifi.print(F("\",\""));
-	wifi.print(ESP8266_PWD);
-	wifi.println("\")");
-
-	if(!searchResults("nodemcu-httpserver running at ",10000,DEBUG))
-	{
-		initialised = false;
-		MYSERIAL.println(F("Failed to start webserver"));
-		return;
-	}
-	wifi.readBytesUntil(13, address, 25);
-
-	clearResults();
-	MYSERIAL.print(F("Webservice ready at: "));
-	MYSERIAL.println(address);
-	
-	initialised = true;
+	return mode;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -246,18 +98,39 @@ void handle_esp8266()
 		//increment char pos
 		cmd_pos++;
 		//check for overflow !
-		if(cmd_pos > CMD_LEN)
+		if(cmd_pos >= CMD_LEN)
 		{
 			cmd_pos=0;
 			MYSERIAL.println("Error: got a too long command from ESP8266 ! ");
+			MYSERIAL.println(cmd_buf);
 		}
 	}
 	
 	//process commands
 	if(cmd_available)
 	{
+		//state commands
+		if(strncmp(cmd_buf,"IP",2)==0)
+		{
+			//store IP
+			cmd_buf[cmd_pos-1] = 0;
+			snprintf(address,STORAGE_SIZE,"%s",cmd_buf+3);
+		}
+		else if(strncmp(cmd_buf,"MODE",4)==0)
+		{
+			//store mode
+			cmd_buf[cmd_pos-1] = 0;
+			snprintf(mode,STORAGE_SIZE,"MODE:%s",cmd_buf+5);
+		}
+		else if(strncmp(cmd_buf,"SSID",4)==0)
+		{
+			//store ssid
+			cmd_buf[cmd_pos-1] = 0;
+			snprintf(ssid,STORAGE_SIZE,"SSID:%s",cmd_buf+5);
+		}
+		
 		//move commands
-		if(strncmp(cmd_buf,"MOVE",4)==0)
+		else if(strncmp(cmd_buf,"MOVE",4)==0)
 		{
 			//split string
 			double data[5];
@@ -272,7 +145,7 @@ void handle_esp8266()
 			}
 			//execute move
 			ESP8266_move(data[0],data[1],data[2],data[3],data[4]);
-
+			wifi.println("ok");
 		}
 		// GETTEMP command
 		else if(strncmp(cmd_buf,"GETTEMP",7)==0)
@@ -337,6 +210,7 @@ void handle_esp8266()
 				if(data[1] > BED_MAXTEMP - 15) data[1] =  BED_MAXTEMP - 15;
 				target_temperature_bed = data[1];
 			}
+			wifi.println("ok");
 		}
 		//HOME command
 		else if(strncmp(cmd_buf,"HOME",4)==0)
@@ -357,6 +231,43 @@ void handle_esp8266()
 					enquecommand_P(PSTR("G28 Z"));
 					break;
 			}
+			wifi.println("ok");
+		}
+		else if(strncmp(cmd_buf,"UPLOAD",6)==0)
+		{	
+			MYSERIAL.print("File upload: ");
+			MYSERIAL.println(cmd_buf+7);
+			//open file
+			//card.openFile(cmd_buf+7,false,true);
+			card.openFile("test.txt",false,true);
+			if(card.isFileOpen()) wifi.println("ok");
+			else  wifi.println("Error file open");
+			
+			char linebuf[100];
+			while(1)
+			{
+				// get a line of data
+				int num = wifi.readBytesUntil('\0',linebuf,100);
+				if( num == 0)
+				{
+					MYSERIAL.println("Timeout ! ");
+					card.closefile();
+					break;
+				}
+				linebuf[num] = 0;
+				if(strncmp(linebuf,"ENDUPLOAD",9)==0)
+				{
+					card.closefile();
+					wifi.println("ok");
+					MYSERIAL.print("File upload ended");
+					break;
+				}
+				//MYSERIAL.print(linebuf);
+				card.write(linebuf);
+				wifi.println("ok");
+				//MYSERIAL.print("ok");
+			}
+
 		}
 		else
 		{
@@ -365,6 +276,55 @@ void handle_esp8266()
 		//reset command
 		cmd_pos=0;
 	}
+}
+
+void esp8266_load_cfg()
+{
+	card.openFile("wifi.cfg",true);
+	if(card.isFileOpen())
+	{
+		char line_buffer[60];
+		while(!card.eof())
+		{
+			  //get a line of chars
+			int linepos =0;
+			while(1)
+			{
+				if(linepos > 60)
+				{
+					MYSERIAL.print("Too long line detected in wifi.config"); 
+					line_buffer[linepos] =0;
+					break;
+				}
+				
+				int16_t n=card.get();
+				char my_char = (char)n;
+		  
+				if(my_char== '\n' || my_char=='\r' || card.eof())
+				{
+					line_buffer[linepos] =0;
+					break;
+				}
+				// store char
+				line_buffer[linepos] = my_char;
+				//go to next
+				linepos++;
+				
+			}
+			
+			// if we have a line, send to wifi module
+			if(linepos > 0)
+			{
+				wifi.println(line_buffer);
+				//wait for a response
+				if(!searchResults("ok",1000,DEBUG))
+				{
+					MYSERIAL.println("No answer from esp8266");
+					break;
+				}
+			}			
+		}
+	}	
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -31,13 +31,13 @@ void init_esp8266();
 //regulary call this functions
 void handle_esp8266();
 
-// helper
-void check_upload_esp8266(int type);
+// get function for network data
+char* esp8266_ip();
+char* esp8266_ssid();
+char* esp8266_mode();
 
-
-//helper functions
-void upload_file_esp8266(char* remote_file);
-void esp8266_reset();
+//tries to load config from sd card
+void esp8266_load_cfg();
 
 void ESP8266_move(double x, double y, double z, double e,int f);
 bool searchResults(char *target, long timeout, int dbg);

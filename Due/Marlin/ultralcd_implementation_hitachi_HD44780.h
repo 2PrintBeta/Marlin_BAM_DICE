@@ -713,6 +713,9 @@ static void lcd_implementation_drawmenu_sddirectory(uint8_t row, const char* pst
 #define lcd_implementation_drawmenu_gcode(row, pstr, gcode) lcd_implementation_drawmenu_generic(row, pstr, ' ', ' ')
 #define lcd_implementation_drawmenu_function_selected(row, pstr, data) lcd_implementation_drawmenu_generic(row, pstr, '>', ' ')
 #define lcd_implementation_drawmenu_function(row, pstr, data) lcd_implementation_drawmenu_generic(row, pstr, ' ', ' ')
+#define lcd_implementation_drawmenu_dummy_selected(row, pstr, data) lcd_implementation_drawmenu_generic(row, pstr, '>', ' ')
+#define lcd_implementation_drawmenu_dummy(row, pstr, data) lcd_implementation_drawmenu_generic(row, pstr, ' ', ' ')
+
 
 static void lcd_implementation_quick_feedback()
 {
