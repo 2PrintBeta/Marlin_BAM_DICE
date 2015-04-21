@@ -7,7 +7,7 @@
 
 #include "TcpServer.h"
 #include "TcpClient.h"
-
+#include "Arduino.h"
 #include "../../SmingCore/Digital.h"
 #include "../../SmingCore/Timer.h"
 
@@ -41,7 +41,7 @@ TcpConnection* TcpServer::createClient(tcp_pcb *clientTcp)
 		debugf("TCP Server createClient not NULL");
 	}
 
-	TcpConnection* con = new TcpClient(clientTcp, clientReceive, false);
+	TcpConnection* con = new TcpClient(clientTcp, clientReceive, true);
 	return con;
 }
 
@@ -82,7 +82,7 @@ err_t TcpServer::onAccept(tcp_pcb *clientTcp, err_t err)
 	}
 
 	#ifdef NETWORK_DEBUG
-	debugf("onAccept state: %d K=%d", err, totalConnections);
+	debugf("onAccept state: %d K=%d time=%d", err, totalConnections,millis());
 	list_mem();
 	#endif
 

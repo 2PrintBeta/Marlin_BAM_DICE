@@ -39,7 +39,10 @@ char* esp8266_mode();
 //tries to load config from sd card
 void esp8266_load_cfg();
 
+// helper functions
 void ESP8266_move(double x, double y, double z, double e,int f);
+String createShortFilename(char* name);
+void esp8266_process_cmd(char* cmd,int cmd_pos);
 bool searchResults(char *target, long timeout, int dbg);
 void clearResults();
 void debug(char *msg) ;

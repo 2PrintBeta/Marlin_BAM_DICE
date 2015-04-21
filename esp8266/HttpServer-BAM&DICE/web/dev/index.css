@@ -13,7 +13,7 @@ body {
 }
 
 
-#remote {
+#main {
 	background-color: #666;
 	width: 90%;
 	border-radius: 30px;
@@ -55,6 +55,31 @@ body {
   border-style: inset;
 }
 
+.sdbutton {
+	padding: 0px 2px;
+	display: inline-block;
+	border-style: outset;
+	color: rgba(100, 100, 100, 1);
+	text-decoration: none;
+	border-radius: 10px;
+	text-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
+	font-size: 28px;
+	font-weight: bold;
+	background-color: #CCC;
+	-moz-box-shadow: 0 10px rgba(0, 0, 0, 0.25);
+	box-shadow: 0 5px rgba(0, 0, 0, 0.25);
+	position: relative;
+	border-width: 2px;
+	border-color: #fff;
+	float:left;
+	width: 110px;
+}
+
+.sdbutton:active {
+  border-style: inset;
+}
+
+
 .button {
 	padding: 0px 2px;
 	display: inline-block;
@@ -84,7 +109,7 @@ body {
 	border-color: #fff;
 }
 
-#label {
+#status {
 	font-family: "Lucida Grande", Lucida, Verdana, sans-serif;
 	background-color: rgba(0, 0, 0, 0.1);
 	width: 12px;
@@ -100,31 +125,31 @@ body {
 	margin-bottom: 30px;
 }
 
-#label.start {
+#status.start {
 
 }
 
-#label.initalizing {
+#status.initalizing {
 
 }
 
-#label.connection {
+#status.connection {
 	background-color: orange;
 }
 
-#label.received {
+#status.received {
 	background-color: orange;
 }
 
-#label.processing {
+#status.processing {
 	background-color: orange;
 }
 
-#label.ok {
+#status.ok {
 	background-color: green;
 }
 
-#label.bad {
+#status.bad {
 	background-color: red;
 }
 
@@ -183,7 +208,6 @@ body {
  
 .tabreiter li > div
 {
-    top: 33px;
     left: 0;
     width: 100%;
     padding: 8px;
@@ -235,8 +259,8 @@ body {
     cursor: no-drop;
 }
 
-.temperature { 
-	height: 20px;  /* Can be anything */
+.showvalue { 
+	
 	position: relative;
 	background: #555;
 	-moz-border-radius: 25px;
@@ -246,9 +270,25 @@ body {
 	box-shadow: inset 0 -1px 1px rgba(255,255,255,0.3);
 	color: #fff;
 	font-size: 15px;
+	font-weight: bold;
 }
 
-.temperature > span {
+.bar {
+	height: 20px;  /* Can be anything */
+}
+
+.label
+{
+	background: #eee;
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	border-radius: 10px;
+	font-size: 25px;
+	box-shadow: inset 0px -2px 2px rgba(0, 0, 0, 0.3);
+	text-align: left;
+}
+
+.showvalue > span {
   display: block;
   height: 100%;
   border-top-right-radius: 8px;
@@ -268,48 +308,47 @@ body {
   overflow: hidden;
 }
 
-#measure-value-temp1 {
+.FileArea { 
+	position: relative;
+	background: #555;
+	-moz-border-radius: 25px;
+	-webkit-border-radius: 25px;
+	border-radius: 25px;
+	padding: 10px;
+	box-shadow: inset 0 -1px 1px rgba(255,255,255,0.3);
+	color: #fff;
+	font-size: 15px;
+	width:100%;
+	float: right;
+}
+
+.measure-value {
 	font-size: 15px;
 	float: left;
 	color: #fff;
 }
-#target-value-temp1 {
+.target-value {
 	font-size: 15px;
 	float: left;
-	position: absolute;
+	position: absolute !important;; 
 	top: 0px;
 	bottom: 0px;
 	left: 0px;
 	right: 0px;
-	background: #777;
+	background: #777 !important;;
 }
-#measure-value-temp2{
-	font-size: 15px;
-	float: left;
-	color: #fff;
+
+#sdarea {
+	position: relative;
+	width: 100%;
+	margin: 10 auto;
 }
-#target-value-temp2{
-	font-size: 15px;
-	float: left;
-	position: absolute;
-	top: 0px;
-	bottom: 0px;
-	left: 0px;
-	right: 0px;
-	background: #777;
+#statusarea {
+	position: relative;
+	width: 100%;
+	margin: 10 auto;
 }
-#measure-value-bed {
-	font-size: 15px;
-	float: left;
-	color: #fff;
-}
-#target-value-bed {
-	font-size: 15px;
-	float: left;
-	position: absolute;
-	top: 0px;
-	bottom: 0px;
-	left: 0px;
-	right: 0px;
-	background: #777;
+#configarea {
+	width:50%;
+	margin: 0 auto;
 }

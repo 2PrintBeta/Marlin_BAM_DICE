@@ -4,76 +4,177 @@
 #include "../include/webserver.h"
 
 Timer cmdTimer;
-#define CMD_LEN 200
-char cmd_buf[CMD_LEN];
-int cmd_pos=0;
+
+enum eCMDs
+{
+	eNETWORK,
+	eTEMP,
+	ePOS,
+	eSD
+};
+
+eCMDs cmd_state = eNETWORK;
+
 void parseCmd()
 {
-	bool cmd_available = false;
-	while(Serial.available())
+	// do not request new state while upload is running
+	if(uploadInProgress) return;
+
+	//request different states everytime
+	String resp;
+	bool network_changed = false;
+	switch(cmd_state)
 	{
-		// get char
-		cmd_buf[cmd_pos] = Serial.read();
+		case eNETWORK:
+			Serial.println("NETWORK");
+			//wait for answer
+			resp = Serial.readStringUntil('\n');
+			resp.trim();
+			if(resp.startsWith("SEC"))
+			{
+				if((resp.substring(4).length() > 0) &&
+				   (ActiveConfig.security != resp.substring(4)))
+				{
+					ActiveConfig.security = resp.substring(4);
+					network_changed = true;
+				}
+			}
+			else return;
 
-		//check for end of cmd
-		if(cmd_buf[cmd_pos] == '\n')
-		{
-			cmd_buf[cmd_pos+1] = 0;
-			cmd_available = true;
-			break;
-		}
-		//increment char pos
-		cmd_pos++;
-		//check for overflow !
-		if(cmd_pos > CMD_LEN)
-		{
-			cmd_pos=0;
-			//Error too long command
-			// TODO error handling ?
-			break;
-		}
-	}
+			Serial.println("ok");
+			resp = Serial.readStringUntil('\n');
+			resp.trim();
+			if(resp.startsWith("MODE"))
+			{
+				if(resp.substring(5).length() > 0)
+				{
+					Serial.println(resp.substring(5).length());
+					if(resp.substring(5).startsWith("STATION") && (ActiveConfig.isStation == "no"))
+					{
+						ActiveConfig.isStation = "yes";
+						network_changed = true;
+					}
+					else if(resp.substring(5).startsWith("AP") && (ActiveConfig.isStation == "yes"))
+					{
+						ActiveConfig.isStation = "no";
+						network_changed = true;
+					}
+				}
+			}
+			else return;
 
-	//process commands
-	if(cmd_available)
-	{
-		if(strncmp(cmd_buf,"SEC",3)==0)
-		{
-			cmd_buf[cmd_pos-1] = 0;
-			ActiveConfig.security = cmd_buf+4;
-			saveConfig(ActiveConfig);
 			Serial.println("ok");
-		}
-		else if(strncmp(cmd_buf,"MODE",4)==0)
-		{
-			if(strncmp(cmd_buf+5,"STATION",7)==0) ActiveConfig.isStation="yes";
-			else ActiveConfig.isStation="no";
-			saveConfig(ActiveConfig);
-			Serial.println("ok");
-		}
-		else if(strncmp(cmd_buf,"SSID",4)==0)
-		{
-			cmd_buf[cmd_pos-1] = 0;
-			ActiveConfig.NetworkSSID = cmd_buf+5;
-			saveConfig(ActiveConfig);
-			Serial.println("ok");
-		}
-		else if(strncmp(cmd_buf,"PWD",3)==0)
-		{
-			cmd_buf[cmd_pos-1] = 0;
-			ActiveConfig.NetworkPassword = cmd_buf+4;
-			saveConfig(ActiveConfig);
-			Serial.println("ok");
+			resp = Serial.readStringUntil('\n');
+			resp.trim();
+			if(resp.startsWith("SSID"))
+			{
+				if(resp.substring(5).length() > 0)
+				{
+					if(ActiveConfig.NetworkSSID != resp.substring(5))
+					{
+						ActiveConfig.NetworkSSID = resp.substring(5);
+						network_changed = true;
+					}
+				}
+			}
+			else return;
 
-		}
-		else if(strncmp(cmd_buf,"RESET",5)==0)
-		{
 			Serial.println("ok");
-			System.restart();
-		}
+			resp = Serial.readStringUntil('\n');
+			resp.trim();
+			if(resp.startsWith("PWD"))
+			{
+				if(resp.substring(4).length() > 0)
+				{
+					if(ActiveConfig.NetworkPassword != resp.substring(4))
+					{
+						ActiveConfig.NetworkPassword = resp.substring(4);
+						network_changed = true;
+					}
+				}
+			}
+			else return;
 
-		//reset cmd
-		cmd_pos =0;
+			// restart system if network changed
+			if(network_changed)
+			{
+				Serial.println("restarting");
+				saveConfig(ActiveConfig);
+				System.restart();
+			}
+			cmd_state = eTEMP;
+		break;
+		case eTEMP:
+			Serial.println("TEMP");
+			resp = Serial.readStringUntil('\n');
+			if(resp.startsWith("TEMP"))
+			{
+				// parse temp values
+				resp = resp.substring(5);
+				int startpos =0;
+				int endpos = resp.indexOf(' ');
+				curState.temp1 = resp.substring(startpos,endpos);
+				startpos = endpos+1;
+				endpos = resp.indexOf(' ',startpos);
+				curState.temp1Target = resp.substring(startpos,endpos);
+				startpos = endpos+1;
+				endpos = resp.indexOf(' ',startpos);
+				curState.temp2 = resp.substring(startpos,endpos);
+				startpos = endpos+1;
+				endpos = resp.indexOf(' ',startpos);
+				curState.temp2Target = resp.substring(startpos,endpos);
+				startpos = endpos+1;
+				endpos = resp.indexOf(' ',startpos);
+				curState.tempBed = resp.substring(startpos,endpos);
+				startpos = endpos+1;
+				endpos = resp.indexOf(' ',startpos);
+				curState.tempBedTarget = resp.substring(startpos,endpos);
+			}
+			else return;
+			cmd_state = ePOS;
+		break;
+		case ePOS:
+			Serial.println("POS");
+			resp = Serial.readStringUntil('\n');
+			if(resp.startsWith("POS"))
+			{
+				// parse positions
+				resp = resp.substring(4);
+				int startpos =0;
+				int endpos = resp.indexOf(' ');
+				curState.xPos = resp.substring(startpos,endpos);
+				startpos = endpos+1;
+				endpos = resp.indexOf(' ',startpos);
+				curState.yPos = resp.substring(startpos,endpos);
+				startpos = endpos+1;
+				endpos = resp.indexOf(' ',startpos);
+				curState.zPos = resp.substring(startpos,endpos);
+			}
+			else return;
+			cmd_state = eSD;
+		break;
+		case eSD:
+			Serial.println("SD");
+			resp = Serial.readStringUntil('\n');
+			if(resp.startsWith("SD"))
+			{
+				//parse SD State
+				resp = resp.substring(3);
+				int startpos =0;
+				int endpos = resp.indexOf(' ');
+				curState.SDselected = resp.substring(startpos,endpos);
+				startpos = endpos+1;
+				endpos = resp.indexOf(' ',startpos);
+				curState.SDpercent = resp.substring(startpos,endpos);
+				startpos = endpos+1;
+				endpos = resp.indexOf(' ',startpos);
+				curState.printTime = resp.substring(startpos,endpos);
+			}
+			else return;
+			cmd_state = eNETWORK;
+		break;
+		default:
+			return;
 	}
 }
 
@@ -137,7 +238,7 @@ void connectFail()
 void init()
 {
 	Serial.begin(1000000); // 115200 by default
-	//Serial.setTimeout(1000);
+	Serial.setTimeout(500);
 	Serial.systemDebugOutput(false); // Enable debug output to serial
 
 	//start wireless
@@ -173,6 +274,5 @@ void init()
 
 	// start cmd interface
 	cmdTimer.initializeMs(500, parseCmd).start();
-
 
 }

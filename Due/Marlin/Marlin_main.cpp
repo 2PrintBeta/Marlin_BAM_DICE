@@ -627,11 +627,17 @@ void loop()
     bufindr = (bufindr + 1)%BUFSIZE;
   }
   //check heater every n milliseconds
+  call_regular();
+  
+  
+}
+
+void call_regular(void)
+{
   manage_heater();
   manage_inactivity();
   checkHitEndstops();
   lcd_update();
-  
   handle_esp8266();
 }
 
@@ -1265,9 +1271,7 @@ void process_commands()
       codenum += millis();  // keep track of when we started waiting
       previous_millis_cmd = millis();
       while(millis()  < codenum ){
-        manage_heater();
-        manage_inactivity();
-        lcd_update();
+		call_regular();
       }
       break;
       #ifdef FWRETRACT
@@ -1707,15 +1711,11 @@ void process_commands()
       if (codenum > 0){
         codenum += millis();  // keep track of when we started waiting
         while(millis()  < codenum && !lcd_clicked()){
-          manage_heater();
-          manage_inactivity();
-          lcd_update();
+			call_regular();
         }
       }else{
         while(!lcd_clicked()){
-          manage_heater();
-          manage_inactivity();
-          lcd_update();
+			call_regular();
         }
       }
       LCD_MESSAGEPGM(MSG_RESUMING);
@@ -2037,9 +2037,7 @@ void process_commands()
             #endif
             codenum = millis();
           }
-          manage_heater();
-          manage_inactivity();
-          lcd_update();
+		 call_regular();
         #ifdef TEMP_RESIDENCY_TIME
             /* start/restart the TEMP_RESIDENCY_TIME timer whenever we reach target temp for the first time
               or when current temp falls outside the hysteresis after target temp was reached */
@@ -2085,9 +2083,7 @@ void process_commands()
             SERIAL_PROTOCOLLN("");
             codenum = millis();
           }
-          manage_heater();
-          manage_inactivity();
-          lcd_update();
+		  call_regular();
         }
         LCD_MESSAGEPGM(MSG_BED_DONE);
         previous_millis_cmd = millis();
@@ -2568,9 +2564,7 @@ void process_commands()
             }
 
             while(digitalRead(pin_number) != target){
-              manage_heater();
-              manage_inactivity();
-              lcd_update();
+				call_regular();
             }
           }
         }

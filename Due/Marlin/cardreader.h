@@ -42,6 +42,7 @@ public:
 
 
   FORCE_INLINE bool isFileOpen() { return file.isOpen(); }
+  FORCE_INLINE uint32_t fileSize() {return filesize;}
   FORCE_INLINE bool eof() { return sdpos>=filesize ;};
   FORCE_INLINE int16_t get() {  sdpos = file.curPosition();return (int16_t)file.read();};
   FORCE_INLINE void setIndex(long index) {sdpos = index;file.seekSet(index);};

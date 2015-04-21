@@ -146,14 +146,6 @@
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
-			<target name="1843200" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
-				<buildCommand>1843200</buildCommand>
-				<buildArguments>-f ${ProjDirPath}/Makefile</buildArguments>
-				<buildTarget/>
-				<stopOnError>true</stopOnError>
-				<useDefaultCommand>false</useDefaultCommand>
-				<runAllBuilders>true</runAllBuilders>
-			</target>
 		</buildTargets>
 	</storageModule>
 </cproject>

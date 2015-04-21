@@ -983,8 +983,7 @@ void thermal_runaway_protection(int *state, unsigned long *timer, float temperat
           disable_e0();
           disable_e1();
           disable_e2();
-          manage_heater();
-          lcd_update();
+		  call_regular();
         }
       }
       break;

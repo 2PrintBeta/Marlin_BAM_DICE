@@ -11,7 +11,7 @@
 #include "NetUtils.h"
 #include "../Wiring/WString.h"
 #include "../Wiring/IPAddress.h"
-
+#include "Arduino.h"
 TcpConnection::TcpConnection(bool autoDestruct) : autoSelfDestruct(autoDestruct), sleep(0), canSend(true), timeOut(70)
 {
 	initialize(tcp_new());
@@ -26,7 +26,7 @@ TcpConnection::~TcpConnection()
 {
 	close();
 
-	debugf("~TCP connection");
+	debugf("~TCP connection time=%d",millis());
 }
 
 bool TcpConnection::connect(String server, int port)
@@ -216,6 +216,9 @@ int TcpConnection::write(IDataSourceStream* stream)
 
 void TcpConnection::close()
 {
+	//close connection now !
+	closeTcpConnection(tcp);
+
 	if (tcp == NULL) return;
 	debugf("TCP connection closing");
 
@@ -243,7 +246,7 @@ void TcpConnection::closeTcpConnection(tcp_pcb *tpcb)
 {
 	if (tpcb == NULL) return;
 
-	debugf("-TCP connection");
+	debugf("-TCP connection time=%d",millis());
 
 	tcp_arg(tpcb, NULL);
 	tcp_sent(tpcb, NULL);

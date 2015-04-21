@@ -4,204 +4,90 @@
       <link rel="stylesheet" type="text/css" href="index.css">
       <meta charset="UTF-8">
       <title>BAM&amp;DICE Control </title>
+	  <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+	  <script type="text/javascript" src="index.js"></script>
+	  <script> window.onload = autorefresh; </script>
    </head>
-   <script>
-      var xmlHttp = null;
-	  var refreshTimer = null;
-	  // request temperature values 
-	  function getTemp()
-	  {
-		var url = "/get?temp=1";
-
-		xmlHttp = new XMLHttpRequest();
-		xmlHttp.onreadystatechange = processTemp;
-		xmlHttp.open("GET", url, true);
-		xmlHttp.send( null );
-	  }
-	  // handle recieved temperature values 
-	  function processTemp()
-	  {
-		processRequest();
-		if (xmlHttp.readyState == 4) {
-			var data = JSON.parse(xmlHttp.responseText);
-			document.getElementById("measure-value-temp1").innerHTML = data.Temp1 + "&deg;C";
-			document.getElementById("measure-value-temp1").style.width = ((data.Temp1/300)*100)+"%";
-			document.getElementById("target-value-temp1").style.width = ((data.Temp1Target/300)*100)+"%";
-			if(data.Temp2 != "--")
-			{
-				document.getElementById("measure-value-temp2").innerHTML = data.Temp2 + "&deg;C";
-				document.getElementById("measure-value-temp2").style.width = ((data.Temp2/300)*100)+"%";
-				document.getElementById("target-value-temp2").style.width = ((data.Temp2Target/300)*100)+"%";
-				document.getElementById("hotend2").style.display = 'block';
-			}
-			else document.getElementById("hotend2").style.display = 'none';
-			
-			document.getElementById("measure-value-bed").innerHTML = data.Bed + "&deg;C";
-			document.getElementById("measure-value-bed").style.width = ((data.Bed/300)*100)+"%";
-			document.getElementById("target-value-bed").style.width = ((data.BedTarget/300)*100)+"%";
-		}
-	  }
-	  // set new target temperatures, updates temperature values 
-	  function settemp(heater)
-	  {
-		var url = "/set?heater=" + heater +"&temp=";
-		var value =0;
-		if(heater == 1) value = document.getElementById("temp1").value;
-		else if(heater==2) value = document.getElementById("temp2").value;
-		else if(heater==3) value = document.getElementById("bed").value;
-		
-		url = url+value;
-
-		xmlHttp = new XMLHttpRequest();
-		xmlHttp.onreadystatechange = processRequest;
-		xmlHttp.open("GET", url, true);
-		xmlHttp.send( null );
-		
-		getTemp();
-	  }
-	  // move any axis by an amount
-	  function move(amount,axis,speed)
-	  {
-		 var url = "/set?move=" + amount + "&axis="+axis+"&speed="+speed;
-
-		 xmlHttp = new XMLHttpRequest();
-		 xmlHttp.onreadystatechange = processRequest;
-		 xmlHttp.open("GET", url, true);
-		 xmlHttp.send( null );
-	  }
-	  function move_axis(amount,axis)
-	  {
-		 move(amount,axis,document.getElementById("move_speed").value);
-	  }
-	  //move extruder
-	  function extrude()
-	  {
-		move(document.getElementById("extrude_amount").value,4,document.getElementById("extrude_speed").value);
-	  }
-	  function retract()
-	  {
-		move(document.getElementById("retract_amount").value*-1,4,document.getElementById("retract_speed").value);
-	  }
-	  // home axes, 0 is all axis 
-	  function home(axis)
-	  {
-		var url = "/set?home=" + axis;
-
-		xmlHttp = new XMLHttpRequest();
-		xmlHttp.onreadystatechange = processRequest;
-		xmlHttp.open("GET", url, true);
-		xmlHttp.send( null );
-	  }
-	  // Generic request processing - updates the indicator 
-	  function processRequest()
-	  {
-		 if(xmlHttp.readyState == 0)
-		 {
-			document.getElementById("label").innerHTML = 'Initalizing...';
-			document.getElementById("label").className = "initalizing";
-		 }
-		 else if(xmlHttp.readyState == 1)
-		 {
-			document.getElementById("label").innerHTML = 'Server connection established.';
-			document.getElementById("label").className = "connection";
-		 }
-		 else if(xmlHttp.readyState == 2)
-		 {
-			document.getElementById("label").innerHTML = 'Request received.';
-			document.getElementById("label").className = "received";
-		 }
-		 else if(xmlHttp.readyState == 3)
-		 {
-			document.getElementById("label").innerHTML = 'Processing request.';
-			document.getElementById("label").className = "processing";
-		 }
-		 else if(xmlHttp.readyState == 4)
-		 {
-			if(xmlHttp.status == 200)
-			{
-			   document.getElementById("label").innerHTML = xmlHttp.responseText;
-			   document.getElementById("label").className = "ok";
-			   sleep(300);
-			   document.getElementById("label").className = "start";
-			}
-			else if(xmlHttp.status == 400)
-			{
-			   document.getElementById("label").innerHTML = 'Bad request.';
-			   document.getElementById("label").className = "bad";
-			}
-		 }
-	  }
-	  // Sleep
-	  function sleep(milliseconds){
-		 var start = new Date().getTime();
-		 for (var i = 0; i < 1e7; i++)
-		 {
-			if ((new Date().getTime() - start) > milliseconds)
-			{
-			   break;
-			}
-		 }
-	  }
-	  // only allows number keys 
-	  function isNumberKey(evt){
-		var charCode = (evt.which) ? evt.which : evt.keyCode;
-		if (charCode == 8 || charCode == 46 || charCode == 37 || charCode == 39) 
-			return true;
-		if (charCode > 31 && (charCode < 48 || charCode > 57))
-			return false;
-		return true;
-	  }
-	  // update temperature every 5 seconds 
-	  function autorefresh()
-	  {	
-		if(document.getElementById("autorefresh").checked)
-		{
-			refreshTimer = setInterval(function () {getTemp()},5000);
-		}
-		else
-		{
-			clearInterval(refreshTimer);
-		}
-	  }
-	  		
-  	  function uploadFile()
-	  {
-		// unser File Objekt
-		var file = document.getElementById("fileA").files[0];
-		
-		if(!file)
-			return;
-			
-		//FormData Objekt erzeugen
-		var formData = new FormData();
-		//XMLHttpRequest Objekt erzeugen
-		xmlHttp = new XMLHttpRequest();
-		//Fügt dem formData Objekt unser File Objekt hinzu
-		formData.append("file",file);
-		
-		xmlHttp.onreadystatechange = function(e) {
-			if(xmlHttp.readyState == 4)
-			{
-				alert(xmlHttp.responseText);
-			}
-		};
-		xmlHttp.open("POST", "/upload");
-		xmlHttp.send(formData);
-	  }
-	
-	  // make sure temperture is correct on page load 
-	  window.onload = getTemp;
-   </script>
+  
    <body bgcolor="#5f5f5f">
    <h1> BAM&amp;DICE Controller </h1>
-   <div id="remote">
-      <div id="label" class="start"></div>
-		
+   <div id="main">
+      <div id="status" class="start"></div>
 		<div class="tabreiter">
 		<ul>
+			<!-- This is the Status Tab -->
+			<li>
+			<input type="radio" name="tabreiter-0" checked="checked" id="tabreiter-0-01" />
+			<label for="tabreiter-0-01">Status</label>
+            <div style="width:100%">
+				<div id="statusarea">	
+				<div id="chart_div" style="width:400; height:300"></div>
+				<table style="width:100%">
+					<tr>
+						<td class="label"> Hotend 1: </td>
+						<td colspan="3">
+						<div class="showvalue bar" id="hotend">
+						<span style="width: 50%" id="target-value-temp1a" class="target-value"></span>
+						<span style="width: 25%" id="measure-value-temp1a" class="measure-value">25°C</span>
+						</div>
+						</td> 
+					</tr>
+					<tr id="hotend2a">
+						<td class="label"> Hotend 2: </td>
+						<td colspan="3"> 
+						<div class="showvalue bar" id="hotend">
+						<span style="width: 50%" id="target-value-temp2a" class="target-value"></span>
+						<span style="width: 25%" id="measure-value-temp2a" class="measure-value">25°C</span>
+						</div>
+						</td> 
+					</tr>
+					<tr>
+						<td class="label"> Bed: </td>
+						<td colspan="3"> 
+						<div class="showvalue bar" id="bed">
+						<span style="width: 50%" id="target-value-beda" class="target-value"></span>
+						<span style="width: 25%" id="measure-value-beda" class="measure-value">25°C</span>
+						</div>
+						</td> 
+					</tr>
+					<tr>
+						<td class="label"> Position: </td>
+						<td><div class="showvalue" id="xPos">xPos</div></td> 
+						<td><div class="showvalue" id="yPos">yPos</div></td>
+						<td> <div class="showvalue" id="zPos">zPos</div></td>
+					</tr>
+					<tr>
+						<td class="label"> Printed: </td>
+						<td colspan = "3"><div class="showvalue" id="print_percent"> xyz% </div></td> 
+					</tr>
+					<tr>
+						<td class="label"> Print Time: </td>
+						<td colspan = "3"><div class="showvalue" id="print_time"> 123:12 h</div> </td> 
+					</tr>
+					<tr>
+						<td class="label"> Selected File </td> 
+						<td colspan ="3">
+						<select name="FileDisplay" id="FileDisplay2" size="1"  class="FileArea"> 
+						</select>
+						</td>
+						<td><a href="#" onclick="refreshSD();" class="button"> <span>Refresh</span> </a> 
+						</td>
+						<td><a href="#" onclick="printFile();" id="print_btn" class="button"> <span>Print</span> </a> 
+						</td>
+						<td><a href="#" onclick="pausePrint();" id="pause_btn" class="button"> <span>Pause</span> </a> 
+						</td>
+						<td><a href="#" onclick="resumePrint();" id="resume_btn" class="button"> <span>Resume</span> </a> 
+						</td>
+						<td><a href="#" onclick="stopPrint();" id="stop_btn" class="button"> <span>Stop</span> </a> 
+						</td>
+					</tr>
+				</table>
+				</div>
+			</div>
+			</li>
 			<!-- This is the Extruder Tab -->
 			<li>
-			<input type="radio" name="tabreiter-0" checked="checked" id="tabreiter-0-0" />
+			<input type="radio" name="tabreiter-0" id="tabreiter-0-0" />
 			<label for="tabreiter-0-0">Extruder</label>
             <div>
 				<!-- Table with Temperature elements -->
@@ -211,66 +97,63 @@
 						<col width="70%"> 
 						<col width="5%"> 
 						<col width="8%">
-						</colgroup>
-					<tr> <td align="left">
+					</colgroup>
+					<tr> <td align="left" class="label">
 					Hotend 1:
 					</td> <td>
-					<div class="temperature" id="hotend">
-						<span style="width: 50%" id="target-value-temp1"></span>
-						<span style="width: 25%" id="measure-value-temp1">25°C</span>
+					<div class="showvalue bar" id="hotend">
+						<span style="width: 50%" id="target-value-temp1b" class="target-value"></span>
+						<span style="width: 25%" id="measure-value-temp1b" class="measure-value">25°C</span>
 					</div>
-					</td><td valign="middle">
-					<input id="temp1" maxlength="3" size="1" onkeypress='return isNumberKey(event)' class="temperature">
+					</td><td valign="middle" >
+					<input id="temp1" maxlength="3" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
 					</td> <td>
 					<a href="#" onclick="settemp(1);" class="button"> <span>Set</span> </a>
 					</td> 
 					</tr>			
-					<tr id="hotend2" > <td align="left">	
+					<tr id="hotend2b" > <td align="left" class="label">	
 					Hotend 2:
 					</td> <td>
-					<div class="temperature" id="hotend">
-						<span style="width: 50%" id="target-value-temp2"></span>
-						<span style="width: 25%" id="measure-value-temp2">25°C</span>
+					<div class="showvalue bar" id="hotend">
+						<span style="width: 50%" id="target-value-temp2b" class="target-value"></span>
+						<span style="width: 25%" id="measure-value-temp2b" class="measure-value">25°C</span>
 					</div>
 					</td><td valign="middle">
-					<input id="temp2" maxlength="3" size="1" onkeypress='return isNumberKey(event)' class="temperature">
+					<input id="temp2" maxlength="3" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
 					</td><td>
 					<a href="#" onclick="settemp(2);" class="button"> <span>Set</span> </a>
 					</td>
 					</tr>
-					<tr><td align="left">
+					<tr><td align="left" class="label">
 					Bed:
 					</td> <td>
-					<div class="temperature" id="bed">
-						<span style="width: 50%" id="target-value-bed"></span>
-						<span style="width: 25%" id="measure-value-bed">25°C</span>
+					<div class="showvalue bar" id="bed">
+						<span style="width: 50%" id="target-value-bedb" class="target-value"></span>
+						<span style="width: 25%" id="measure-value-bedb" class="target-value">25°C</span>
 					</div>
 					</td><td valign="middle">
-					<input id="bed" maxlength="3" size="1" onkeypress='return isNumberKey(event)' class="temperature">
+					<input id="bed" maxlength="3" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
 					</td><td>
 					<a href="#" onclick="settemp(3);" class="button"> <span>Set</span> </a>
 					</td>
 					</tr>
 				</table>
-				<!-- Refresh / autorefresh -->
-				<a href="#" onclick="getTemp();" class="button"> <span>Refresh</span> </a>
-				<label><input type="checkbox" onclick="autorefresh();" id="autorefresh"/> Autorefresh</label>
 				
 				<!-- Table with Extruder buttons -->
 				<center>
 				<table>
 					<tr>
-						<th> </th> <th> Amount </th> <th> Speed </th>
+						<th> </th> <th class="label"> Amount </th> <th class="label"> Speed </th>
 					</tr>
 					<tr>
 						<td> 
 						<a href="#" onclick="extrude();" class="button"> <span>Extrude</span> </a>
 						</td> 
 						<td>
-						<input id="extrude_amount" value="5" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="temperature">
+						<input id="extrude_amount" value="5" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
 						</td>
 						<td>
-						<input id="extrude_speed" value="30" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="temperature">
+						<input id="extrude_speed" value="30" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
 						</td>
 					</tr>
 					<tr>
@@ -278,12 +161,11 @@
 						<a href="#" onclick="retract();" class="button"> <span>Retract</span> </a>
 						</td> 
 						<td>
-						<input id="retract_amount" value="5" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="temperature">
+						<input id="retract_amount" value="5" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
 						</td>
 						<td>
-						<input id="retract_speed" value="30" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="temperature">
+						<input id="retract_speed" value="30" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
 						</td>
-					</td>
 					</tr>
 				</table>
 				</center>
@@ -298,7 +180,7 @@
 				<table>
 					<tr>
 						<td>
-						<input id="move_speed" value="300" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="temperature">
+						<input id="move_speed" value="300" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
 						</td><td></td><td></td><td></td><td>
 						<div class="movebutton movelabel"> <span>+Y</span> </div>
 						</td><td></td><td></td><td></td><td></td><td>
@@ -318,7 +200,7 @@
 						</td>
 					</tr>
 					<tr>
-						<td></td></td></td><td></td><td>
+						<td></td><td></td><td>
 						<a href="#" onclick="move(1,2);" class="movebutton"> <span>1</span> </a>
 						</td><td></td><td></td><td>
 						<a href="#" onclick="move(1,3);" class="movebutton"> <span>1</span> </a>
@@ -372,7 +254,7 @@
 						</td>
 					</tr>
 					<tr>
-						<td></td></td></td><td></td><td>
+						<td></td><td></td><td>
 						<a href="#" onclick="move(-10,2);" class="movebutton"> <span>-10</span> </a>
 						</td><td></td><td></td><td>
 						<a href="#" onclick="move(-10,3);" class="movebutton"> <span>-10</span> </a>
@@ -392,19 +274,95 @@
 			<!-- This is the Print Tab -->
 			<li>
             <input type="radio" name="tabreiter-0" id="tabreiter-0-2" />
-			<label for="tabreiter-0-2">Print</label>
-            <div>	 
-				<form action="" method="post" enctype="multipart/form-data">
-					<input name="file" type="file" id="fileA"/>
-					<input name="upload" value="Upload" type="button" onclick="uploadFile();" />
-				</form>
-				<div>
-					<progress id="progress" style="margin-top:10px"></progress> <span id="prozent"></span>
+			<label for="tabreiter-0-2">Files</label>
+			<div>
+				<div id="sdarea">
+				<table style="width:100%">
+					<colgroup> 
+						<col width="50%"> 
+						<col width="50%"> 
+					</colgroup>
+					<tr> <td rowspan ="3">
+					<select name="FileDisplay" id="FileDisplay" size="15"  class="FileArea" width="300" style="width: 300px"> 
+					</select>
+					</td> <td>
+					<a href="#" onclick="refreshSD();" class="sdbutton"> <span>Refresh</span> </a> 
+					</td> 
+					</tr><tr><td>
+					<a href="#" onclick="deleteFile();" class="sdbutton"> <span>Delete</span> </a>
+					</td>
+					</tr><tr><td>
+					<a href="#" onclick="printFile();" class="sdbutton"> <span>Print</span> </a> 
+					</td>
+					</tr>
+					<tr>
+						<td colspan="2">
+							<form action="" method="post" enctype="multipart/form-data" style="width:50%;margin:auto">
+							<input name="file" type="file" id="fileA"/>
+							<input name="upload" value="Upload" type="button" class="sdbutton" onclick="uploadFile();" style="float:right" />
+							</form>
+						</td>
+					</tr>
+					<tr>
+						<td colspan="2">
+						<progress value="0" max="100" id="file_progress" style="float:none; width:50%" class="FileArea" ></progress> <span id="file_prozent"></span>
+						</td>
+					</tr>	
+				</table>
 				</div>
 			</div>
 			</li>
-		
-			
+	
+		<!-- This is the configuration Tab -->
+			<li>
+			<input type="radio" name="tabreiter-0" id="tabreiter-0-3" />
+			<label for="tabreiter-0-3">Config</label>
+			<div>
+				<div id="configarea">
+				<form method="POST">
+				<table>
+					<tr>
+						<td class="label">
+						<label >Wifi Name:</label>
+						</td> <td>
+						<input type="text" name="SSID" class="showvalue" placeholder="Enter SSID" value="{SSID}">
+						</td>
+					</tr> <tr>
+						<td class="label">
+						<label>Wifi Password:</label>
+						</td> <td>
+						<input type="password" name="Password" class="showvalue" placeholder="Password">
+						</td>
+					</tr><tr>
+						<td class="label">
+						<label>Wifi Mode:</label>
+						</td><td>
+						<select name="STATION" size="1" class="showvalue">
+						<option {MODE_STATION} value="yes">STATION</option>
+						<option {MODE_AP} value="no">ACCESSPOINT</option>
+						</select>  
+						</td>
+					</tr><tr>
+						<td class="label">
+						<label >Wifi Security:</label>
+						</td><td>
+						<select name="SECURITY" size="1" class="showvalue">
+						<option {SEC_OPEN} >OPEN</option>
+						<option {SEC_WEP} >WEP</option>
+						<option {SEC_WPA} >WPA_PSK</option>
+						<option {SEC_WPA2} >WPA2_PSK</option>
+						<option {SEC_WPA12} >WPA_WPA2_PSK</option>
+						</select>
+						</td>
+					</tr>
+				</table>
+				<button type="submit" class="button">Save</button>
+				</form>
+				<br/>
+				<button type="button" class="button" onclick="reboot()">Reboot </button>
+				</div>
+			</div>
+			</li>
 		</ul>
 		</div>
    </div>

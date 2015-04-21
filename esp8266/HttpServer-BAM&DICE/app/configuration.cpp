@@ -25,10 +25,20 @@ BAMConfig loadConfig()
 	}
 	else
 	{
+		/*
+		//TEST
+		cfg.NetworkSSID = "BETA-NET";
+		cfg.NetworkPassword = "8127969022774633";
+		cfg.isStation = "yes";
+		cfg.security = "OPEN";
+	*/
+
+
 		cfg.NetworkSSID = "BAM&DICE";
 		cfg.NetworkPassword = "";
 		cfg.isStation = "no";
 		cfg.security = "OPEN";
+
 	}
 	return cfg;
 }

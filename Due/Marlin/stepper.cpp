@@ -1040,9 +1040,7 @@ void st_init()
 void st_synchronize()
 {
     while( blocks_queued()) {
-    manage_heater();
-    manage_inactivity();
-    lcd_update();
+		call_regular();
   }
 }
 

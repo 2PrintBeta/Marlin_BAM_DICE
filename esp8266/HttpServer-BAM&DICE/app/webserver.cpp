@@ -11,6 +11,9 @@ int postDataProcessed =0;
 String boundary;
 String postError;
 
+bool uploadInProgress = false;
+BAMState curState;
+
 void onFile(HttpRequest &request, HttpResponse &response)
 {
 	String file = request.getPath();
@@ -31,19 +34,67 @@ void onGet(HttpRequest &request, HttpResponse &response)
 	if (request.getRequestMethod() == RequestMethod::GET)
 	{
 		String query;
-		if(request.getQueryParameter("temp").length() > 0)
+		if(request.getQueryParameter("status").length() > 0)
 		{
-			query = "GETTEMP";
+			JsonObjectStream* stream = new JsonObjectStream();
+			JsonObject& json = stream->getRoot();
+			json["Temp1"] = curState.temp1.c_str();
+			json["Temp1Target"] = curState.temp1Target.c_str();
+			json["Temp2"] = curState.temp2.c_str();
+			json["Temp2Target"] = curState.temp2Target.c_str();
+			json["Bed"] = curState.tempBed.c_str();
+			json["BedTarget"] = curState.tempBedTarget.c_str();
+			json["xPos"] = curState.xPos.c_str();
+			json["yPos"] = curState.yPos.c_str();
+			json["zPos"] = curState.zPos.c_str();
+			json["SDpercent"] = curState.SDpercent.c_str();
+			json["printTime"] = curState.printTime.c_str();
+			json["SDselected"] = curState.SDselected.c_str();
+			response.sendJsonObject(stream);
+
+		}
+		else response.forbidden();
+	}
+	else response.forbidden();
+}
+
+void onGetLong(HttpRequest &request, HttpResponse &response)
+{
+	if(uploadInProgress)
+	{
+		response.forbidden();
+		return;
+	}
+	if (request.getRequestMethod() == RequestMethod::GET)
+	{
+		String query;
+		if(request.getQueryParameter("files").length() > 0)
+		{
+			query = "LIST";
 		}
 
 		//ask arduino
 		if(query.length() > 0)
 		{
 			Serial.println(query);
-			//wait for response
-			String resp = Serial.readStringUntil('\n');
 			response.setContentType(ContentType::JSON);
-			response.sendString(resp);
+
+			//wait for response
+			int starttime = millis();
+			while(1)
+			{
+				String resp = Serial.readStringUntil('\n');
+
+				if(resp.startsWith("END")) break;
+				else response.sendString(resp);
+
+				if((millis() - starttime) > 1000)
+				{
+					response.sendString("{\"SD\":\"timeout\"}");
+					break;
+				}
+			}
+
 		}
 		else
 		{
@@ -54,9 +105,13 @@ void onGet(HttpRequest &request, HttpResponse &response)
 	}
 	else response.forbidden();
 }
-
 void onSet(HttpRequest &request, HttpResponse &response)
 {
+	if(uploadInProgress)
+	{
+		response.forbidden();
+		return;
+	}
 	if (request.getRequestMethod() == RequestMethod::GET)
 	{
 		String query;
@@ -73,6 +128,28 @@ void onSet(HttpRequest &request, HttpResponse &response)
 		{
 			query = "HOME ";
 			query.concat(request.getQueryParameter("home"));
+		}
+		else if(request.getQueryParameter("delete").length() > 0 )
+		{
+			query = "DELETE ";
+			query.concat(request.getQueryParameter("delete"));
+		}
+		else if(request.getQueryParameter("print").length() > 0 )
+		{
+			query = "PRINT ";
+			query.concat(request.getQueryParameter("print"));
+		}
+		else if(request.getQueryParameter("pause").length() > 0 )
+		{
+			query = "PAUSE";
+		}
+		else if(request.getQueryParameter("resume").length() > 0 )
+		{
+			query = "RESUME";
+		}
+		else if(request.getQueryParameter("stop").length() > 0 )
+		{
+			query = "STOP";
 		}
 		else if(request.getQueryParameter("move").length() > 0 &&
 		   request.getQueryParameter("axis").length() > 0 &&
@@ -132,6 +209,11 @@ void onSet(HttpRequest &request, HttpResponse &response)
 
 void onUpload(HttpRequest &request, HttpResponse &response)
 {
+	if(uploadInProgress)
+	{
+		response.forbidden();
+		return;
+	}
 	if (request.getRequestMethod() == RequestMethod::POST)
 	{
 		if(postError != "")
@@ -195,6 +277,7 @@ bool onPost(HttpRequest &request,pbuf* buf)
 		start += 4; //length of unwanted string
 
 		// open file
+		uploadInProgress = true;
 		Serial.print("UPLOAD ");
 		Serial.println(filename);
 		//wait for response
@@ -205,6 +288,7 @@ bool onPost(HttpRequest &request,pbuf* buf)
 			//reset state
 			postDataProcessed = 0;
 			postState =0;
+			uploadInProgress = false;
 			return true;
 		}
 
@@ -236,6 +320,7 @@ bool onPost(HttpRequest &request,pbuf* buf)
 			//reset state
 			postDataProcessed = 0;
 			postState =0;
+			uploadInProgress = false;
 			return true;
 		}
 		start +=test.length();
@@ -258,6 +343,7 @@ bool onPost(HttpRequest &request,pbuf* buf)
 			//reset state
 			postDataProcessed = 0;
 			postState =0;
+			uploadInProgress = false;
 			return true;
 		}
 
@@ -265,6 +351,7 @@ bool onPost(HttpRequest &request,pbuf* buf)
 		postDataProcessed = 0;
 		postState =0;
 		postError = "";
+		uploadInProgress = false;
 		return true;
 	}
 	else
@@ -289,7 +376,7 @@ void onConfiguration(HttpRequest &request, HttpResponse &response)
 		response.redirect();
 	}
 
-	TemplateFileStream *tmpl = new TemplateFileStream("config.html");
+	TemplateFileStream *tmpl = new TemplateFileStream("index.html");
 	auto &vars = tmpl->variables();
 	vars["SSID"] = cfg.NetworkSSID;
 
@@ -316,6 +403,11 @@ void onConfiguration(HttpRequest &request, HttpResponse &response)
 
 void onReboot(HttpRequest &request, HttpResponse &response)
 {
+	if(uploadInProgress)
+	{
+		response.forbidden();
+		return;
+	}
 	if (request.getRequestMethod() == RequestMethod::GET)
 	{
 		if(request.getQueryParameter("reboot").length() > 0)
@@ -331,11 +423,26 @@ void onReboot(HttpRequest &request, HttpResponse &response)
 
 void startWebServer()
 {
+	curState.temp1 = "0";
+	curState.temp1Target = "0";
+	curState.temp2 = "--";
+	curState.temp2Target = "--";
+	curState.tempBed = "0";
+	curState.tempBedTarget = "0";
+	curState.xPos ="0";
+	curState.yPos ="0";
+	curState.zPos ="0";
+	curState.SDpercent = "---";
+	curState.SDselected = "no";
+	curState.printTime = "--:--";
+
 	server.listen(80);
+	server.addPath("/", onConfiguration);
+	server.addPath("/index.html", onConfiguration);
 	server.addPath("/upload", onUpload);
 	server.addPath("/get", onGet);
+	server.addPath("/getLong", onGetLong);
 	server.addPath("/set", onSet);
-	server.addPath("/config", onConfiguration);
 	server.addPath("/reboot", onReboot);
 
 	server.setDefaultHandler(onFile);
