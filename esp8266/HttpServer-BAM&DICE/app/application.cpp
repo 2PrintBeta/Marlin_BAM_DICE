@@ -48,7 +48,6 @@ void parseCmd()
 			{
 				if(resp.substring(5).length() > 0)
 				{
-					Serial.println(resp.substring(5).length());
 					if(resp.substring(5).startsWith("STATION") && (ActiveConfig.isStation == "no"))
 					{
 						ActiveConfig.isStation = "yes";

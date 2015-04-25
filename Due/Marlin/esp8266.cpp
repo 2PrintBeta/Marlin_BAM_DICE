@@ -122,7 +122,7 @@ void handle_esp8266()
 }
 
 void esp8266_process_cmd(char* cmd,int cmd_pos)
-{
+{	
 	//state commands
 	if(strncmp(cmd,"IP",2)==0)
 	{
@@ -176,7 +176,6 @@ void esp8266_process_cmd(char* cmd,int cmd_pos)
 		#else
 		info += "-- -- ";
 		#endif
-		info += " ";
 		info +=degBed();
 		info += " ";
 		info += degTargetBed();
@@ -195,6 +194,7 @@ void esp8266_process_cmd(char* cmd,int cmd_pos)
 		info += current_position[Z_AXIS];
 		info += " ";
 		//send string
+		MYSERIAL.println(info.c_str());
 		wifi.println(info.c_str());
 	}
 	else if(strncmp(cmd,"SD",2)==0)

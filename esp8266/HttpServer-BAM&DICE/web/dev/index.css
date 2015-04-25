@@ -96,6 +96,8 @@ body {
 	position: relative;
 	border-width: 2px;
 	border-color: #fff;
+	vertical-align:middle;
+	margin-bottom: 5px;
 }
 
 .button:active {
@@ -107,6 +109,11 @@ body {
 	border-style: inset;
 	border-width: 2px;
 	border-color: #fff;
+}
+
+#inl_label {
+	text-align: left;
+	float: left;
 }
 
 #status {
@@ -262,7 +269,7 @@ body {
 .showvalue { 
 	
 	position: relative;
-	background: #555;
+	background: #444;
 	-moz-border-radius: 25px;
 	-webkit-border-radius: 25px;
 	border-radius: 25px;
@@ -297,7 +304,6 @@ body {
   border-bottom-left-radius: 20px;
   background-color: rgb(43,194,83);
   background-image: linear-gradient(
-    center bottom,
     rgb(43,194,83) 37%,
     rgb(84,240,84) 69%
   );
@@ -320,6 +326,19 @@ body {
 	font-size: 15px;
 	width:100%;
 	float: right;
+}
+
+.FileSelect { 
+	position: relative;
+	background: #555;
+	-moz-border-radius: 25px;
+	-webkit-border-radius: 25px;
+	border-radius: 25px;
+	padding: 10px;
+	box-shadow: inset 0 -1px 1px rgba(255,255,255,0.3);
+	color: #fff;
+	font-size: 15px;
+	width: 220px
 }
 
 .measure-value {
@@ -352,3 +371,96 @@ body {
 	width:50%;
 	margin: 0 auto;
 }
+#temparea {
+	margin-left:auto;
+	margin-right:auto;
+	width:600px
+}
+.temp-meter {
+  margin-left: 30px;
+  width: 100px;
+  float:left;
+  }
+.temp-meter .glass {
+    background: #e5e5e5;
+    border-radius: 100px 100px 0 0;
+    display: block;
+    height: 200px;
+    margin: 0 35px 10px;
+    padding: 5px;
+    position: relative;
+    width: 20px;
+  }
+.temp-meter .amount {
+    background: #f34e54;
+    border-radius: 100px;
+    display: block;
+    width: 20px;
+    position: absolute;
+     bottom: 5px;
+  }
+  .temp-meter .target {
+    width: 25px;
+    position: absolute;
+    bottom: -36px;
+	left: 0px;
+	z-index:100;
+	height:25px;
+	border-radius: 25px;
+	background-color:rgb(204, 36, 36);
+	font-weight: bold;
+  }
+.temp-meter  strong { 
+	display: block; 
+	text-align: center; 
+	font-size: 15px;
+}
+.temp-meter .goal {
+    font-size: 16px;
+    position: absolute;
+	width: 30.5px;
+	left: -0.5px;
+	border-style: solid;
+	border-left: 0;
+	border-right: 0;
+	border-bottom: 0;
+  }
+.temp-meter .total {
+    font-size: 16px;
+    position: absolute;
+    right: 2px;
+	width: 40px;
+	color #222;
+  }
+
+.bulb {
+  background: #e5e5e5;
+  border-radius: 100px;
+  display: block;
+  height: 50px;
+  margin: 0 35px 10px;
+  padding: 5px;
+  position: relative;
+    top: -20px;
+    right: 15px;
+  width: 50px;
+  }
+.bulb .red-circle {
+    background: #f34e54;
+    border-radius: 100px;
+    display: block;
+    height: 50px;
+    width: 50px;
+  }
+.bulb .filler {
+    background: #f34e54;
+    border-radius: 100px 100px 0 0;
+    display: block;
+    height: 30px;
+    width: 20px;
+    position: relative;
+      top: -65px;
+      right: -15px;
+    z-index: 30;
+  }
+

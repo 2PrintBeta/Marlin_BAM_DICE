@@ -4,7 +4,7 @@
       <link rel="stylesheet" type="text/css" href="index.css">
       <meta charset="UTF-8">
       <title>BAM&amp;DICE Control </title>
-	  <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+	  <script type="text/javascript" src="chart.min.js"></script>
 	  <script type="text/javascript" src="index.js"></script>
 	  <script> window.onload = autorefresh; </script>
    </head>
@@ -21,67 +21,30 @@
 			<label for="tabreiter-0-01">Status</label>
             <div style="width:100%">
 				<div id="statusarea">	
-				<div id="chart_div" style="width:400; height:300"></div>
-				<table style="width:100%">
-					<tr>
-						<td class="label"> Hotend 1: </td>
-						<td colspan="3">
-						<div class="showvalue bar" id="hotend">
-						<span style="width: 50%" id="target-value-temp1a" class="target-value"></span>
-						<span style="width: 25%" id="measure-value-temp1a" class="measure-value">25°C</span>
-						</div>
-						</td> 
-					</tr>
-					<tr id="hotend2a">
-						<td class="label"> Hotend 2: </td>
-						<td colspan="3"> 
-						<div class="showvalue bar" id="hotend">
-						<span style="width: 50%" id="target-value-temp2a" class="target-value"></span>
-						<span style="width: 25%" id="measure-value-temp2a" class="measure-value">25°C</span>
-						</div>
-						</td> 
-					</tr>
-					<tr>
-						<td class="label"> Bed: </td>
-						<td colspan="3"> 
-						<div class="showvalue bar" id="bed">
-						<span style="width: 50%" id="target-value-beda" class="target-value"></span>
-						<span style="width: 25%" id="measure-value-beda" class="measure-value">25°C</span>
-						</div>
-						</td> 
-					</tr>
-					<tr>
-						<td class="label"> Position: </td>
-						<td><div class="showvalue" id="xPos">xPos</div></td> 
-						<td><div class="showvalue" id="yPos">yPos</div></td>
-						<td> <div class="showvalue" id="zPos">zPos</div></td>
-					</tr>
-					<tr>
-						<td class="label"> Printed: </td>
-						<td colspan = "3"><div class="showvalue" id="print_percent"> xyz% </div></td> 
-					</tr>
-					<tr>
-						<td class="label"> Print Time: </td>
-						<td colspan = "3"><div class="showvalue" id="print_time"> 123:12 h</div> </td> 
-					</tr>
-					<tr>
-						<td class="label"> Selected File </td> 
-						<td colspan ="3">
-						<select name="FileDisplay" id="FileDisplay2" size="1"  class="FileArea"> 
+				<div id="chart_display" style="margin: 0px auto; width: 400px;" class="showvalue">
+				<canvas id="chart" ></canvas>
+				<div id="chart_legend"> </div>
+				</div>
+				<div style="margin: 0px auto; width: 400px;" class="showvalue"><div id="inl_label">Position:</div> <div id="cur_position"> X: Y: Z:</div></div>
+				<div style="margin: 0px auto; width: 400px;" class="showvalue"><div id="inl_label">Progress: </div><div id="cur_progress"> 0% </div> </div>
+				<div style="margin: 0px auto; width: 400px;" class="showvalue"> <div id="inl_label">Print time: </div><div id="cur_time"> --:-- </div> </div>
+				<div style="margin: 0px auto; width: 400px;" class="showvalue"> 
+					<div id="inl_label" style="margin-top: 10px;">
+						Selected File: 
+					</div> <div id="file">
+						<select name="FileDisplay" id="FileDisplay2" size="1"  class="FileSelect"> 
 						</select>
-						</td>
-						<td><a href="#" onclick="refreshSD();" class="button"> <span>Refresh</span> </a> 
-						</td>
-						<td><a href="#" onclick="printFile();" id="print_btn" class="button"> <span>Print</span> </a> 
-						</td>
-						<td><a href="#" onclick="pausePrint();" id="pause_btn" class="button"> <span>Pause</span> </a> 
-						</td>
-						<td><a href="#" onclick="resumePrint();" id="resume_btn" class="button"> <span>Resume</span> </a> 
-						</td>
-						<td><a href="#" onclick="stopPrint();" id="stop_btn" class="button"> <span>Stop</span> </a> 
-						</td>
-					</tr>
-				</table>
+						<a href="#" onclick="refreshSD();" class="button"> <span>&#x21bb;</span> </a> 	
+					</div>
+				</div>
+						
+				<div id="control" style="margin: 0px auto; width: 400px;" class="showvalue"> 
+						<a href="#" onclick="printFile();" id="print_btn" class="button"> <span>Print</span> </a> 
+						<a href="#" onclick="pausePrint();" id="pause_btn" class="button"> <span>Pause</span> </a> 
+						<a href="#" onclick="resumePrint();" id="resume_btn" class="button"> <span>Resume</span> </a> 
+						<a href="#" onclick="stopPrint();" id="stop_btn" class="button"> <span>Stop</span> </a> 
+				</div>
+				
 				</div>
 			</div>
 			</li>
@@ -90,57 +53,57 @@
 			<input type="radio" name="tabreiter-0" id="tabreiter-0-0" />
 			<label for="tabreiter-0-0">Extruder</label>
             <div>
-				<!-- Table with Temperature elements -->
-				<table style="width:100%"> 
-					<colgroup> 
-						<col width="17%"> 
-						<col width="70%"> 
-						<col width="5%"> 
-						<col width="8%">
-					</colgroup>
-					<tr> <td align="left" class="label">
-					Hotend 1:
-					</td> <td>
-					<div class="showvalue bar" id="hotend">
-						<span style="width: 50%" id="target-value-temp1b" class="target-value"></span>
-						<span style="width: 25%" id="measure-value-temp1b" class="measure-value">25°C</span>
-					</div>
-					</td><td valign="middle" >
-					<input id="temp1" maxlength="3" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
-					</td> <td>
-					<a href="#" onclick="settemp(1);" class="button"> <span>Set</span> </a>
-					</td> 
-					</tr>			
-					<tr id="hotend2b" > <td align="left" class="label">	
-					Hotend 2:
-					</td> <td>
-					<div class="showvalue bar" id="hotend">
-						<span style="width: 50%" id="target-value-temp2b" class="target-value"></span>
-						<span style="width: 25%" id="measure-value-temp2b" class="measure-value">25°C</span>
-					</div>
-					</td><td valign="middle">
-					<input id="temp2" maxlength="3" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
-					</td><td>
-					<a href="#" onclick="settemp(2);" class="button"> <span>Set</span> </a>
-					</td>
-					</tr>
-					<tr><td align="left" class="label">
-					Bed:
-					</td> <td>
-					<div class="showvalue bar" id="bed">
-						<span style="width: 50%" id="target-value-bedb" class="target-value"></span>
-						<span style="width: 25%" id="measure-value-bedb" class="target-value">25°C</span>
-					</div>
-					</td><td valign="middle">
-					<input id="bed" maxlength="3" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
-					</td><td>
-					<a href="#" onclick="settemp(3);" class="button"> <span>Set</span> </a>
-					</td>
-					</tr>
-				</table>
+				<div id="temparea">
+				<div class="temp-meter">
+				<strong>Hotend 1</strong>
+				<span class="glass">
+					<strong class="total" id="temp1_value" style="bottom: 10%">10 °C</strong>
+					<span class="amount" id="temp1_bar" style="height: 10%"></span>
+					<strong class="goal" id="temp1_goal" style="bottom: 90%"></strong>
+					<input id="temp1" maxlength="3" size="1" onkeypress='return isNumberKey(event)' class="target">
+				</span>
+				<div class="bulb">
+					<span class="red-circle"></span>
+					<span class="filler">
+						<span></span>
+					</span>
+				</div>
+				<a href="#" onclick="settemp(1);" class="button" style="top:-20px"> <span>Set</span> </a>
+				</div>
+				<div class="temp-meter" id="hotend2">
+				<strong>Hotend 2</strong>
+				<span class="glass">
+					<strong class="total" id="temp2_value" style="bottom: 10%">10 °C</strong>
+					<span class="amount" id="temp2_bar" style="height: 10%"></span>
+					<strong class="goal" id="temp2_goal" style="bottom: 90%"></strong>
+					<input id="temp2" maxlength="3" size="1" onkeypress='return isNumberKey(event)' class="target">
+				</span>
+				<div class="bulb">
+					<span class="red-circle"></span>
+					<span class="filler">
+						<span></span>
+					</span>
+				</div>
+				<a href="#" onclick="settemp(2);" class="button" style="top:-20px"> <span>Set</span> </a>
+				</div>
+				<div class="temp-meter">
+				<strong>Print Bed</strong>
+				<span class="glass">
+					<strong class="total" id="bed_value" style="bottom: 10%">10 °C</strong>
+					<span class="amount" id="bed_bar" style="height: 10%"></span>
+					<strong class="goal" id="bed_goal" style="bottom: 90%"></strong>
+					<input id="bed" maxlength="3" size="1" onkeypress='return isNumberKey(event)' class="target">
+				</span>
+				<div class="bulb">
+					<span class="red-circle"></span>
+					<span class="filler">
+						<span></span>
+					</span>
+				</div>
+				<a href="#" onclick="settemp(3);" class="button" style="top:-20px"> <span>Set</span> </a>
+				</div>
 				
 				<!-- Table with Extruder buttons -->
-				<center>
 				<table>
 					<tr>
 						<th> </th> <th class="label"> Amount </th> <th class="label"> Speed </th>
@@ -168,7 +131,7 @@
 						</td>
 					</tr>
 				</table>
-				</center>
+				</div>	
 			</div>
 			</li>
 			<!-- This is the Axis Tab -->
@@ -325,33 +288,33 @@
 						<td class="label">
 						<label >Wifi Name:</label>
 						</td> <td>
-						<input type="text" name="SSID" class="showvalue" placeholder="Enter SSID" value="{SSID}">
+						<input type="text" id="wifi_ssid" class="showvalue" placeholder="Enter SSID" value="none">
 						</td>
 					</tr> <tr>
 						<td class="label">
 						<label>Wifi Password:</label>
 						</td> <td>
-						<input type="password" name="Password" class="showvalue" placeholder="Password">
+						<input type="password" id="wifi_pwd" class="showvalue" placeholder="Password">
 						</td>
 					</tr><tr>
 						<td class="label">
 						<label>Wifi Mode:</label>
 						</td><td>
-						<select name="STATION" size="1" class="showvalue">
-						<option {MODE_STATION} value="yes">STATION</option>
-						<option {MODE_AP} value="no">ACCESSPOINT</option>
+						<select id="wifi_mode" size="1" class="showvalue">
+						<option value="yes">STATION</option>
+						<option value="no">ACCESSPOINT</option>
 						</select>  
 						</td>
 					</tr><tr>
 						<td class="label">
 						<label >Wifi Security:</label>
 						</td><td>
-						<select name="SECURITY" size="1" class="showvalue">
-						<option {SEC_OPEN} >OPEN</option>
-						<option {SEC_WEP} >WEP</option>
-						<option {SEC_WPA} >WPA_PSK</option>
-						<option {SEC_WPA2} >WPA2_PSK</option>
-						<option {SEC_WPA12} >WPA_WPA2_PSK</option>
+						<select id="wifi_sec" size="1" class="showvalue">
+						<option>OPEN</option>
+						<option>WEP</option>
+						<option>WPA_PSK</option>
+						<option>WPA2_PSK</option>
+						<option>WPA_WPA2_PSK</option>
 						</select>
 						</td>
 					</tr>

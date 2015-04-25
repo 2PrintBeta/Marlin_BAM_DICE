@@ -50,6 +50,13 @@ void onGet(HttpRequest &request, HttpResponse &response)
 			json["SDpercent"] = curState.SDpercent.c_str();
 			json["printTime"] = curState.printTime.c_str();
 			json["SDselected"] = curState.SDselected.c_str();
+
+			json["SSID"] = ActiveConfig.NetworkSSID.c_str();
+			json["PWD"] = ActiveConfig.NetworkPassword.c_str();
+			if(ActiveConfig.isStation == "yes") json["MODE"] = "STATION";
+			else json["MODE"] = "AP";
+			json["SEC"] = ActiveConfig.security.c_str();
+
 			response.sendJsonObject(stream);
 
 		}
@@ -376,29 +383,8 @@ void onConfiguration(HttpRequest &request, HttpResponse &response)
 		response.redirect();
 	}
 
-	TemplateFileStream *tmpl = new TemplateFileStream("index.html");
-	auto &vars = tmpl->variables();
-	vars["SSID"] = cfg.NetworkSSID;
-
-	//station options
-	vars["MODE_STATION"] = "";
-	vars["MODE_AP"] = "";
-	if(cfg.isStation == "yes") vars["MODE_STATION"] = "selected";
-	else vars["MODE_AP"] = "selected";
-
-	//sec options
-	vars["SEC_OPEN"] = "";
-	vars["SEC_WEP"] = "";
-	vars["SEC_WPA"] = "";
-	vars["SEC_WPA2"] = "";
-	vars["SEC_WPA12"] = "";
-	if (cfg.security == "WEP") vars["SEC_WEP"] = "selected";
-	else if (cfg.security == "WPA_PSK")	vars["SEC_WPA"] = "selected";
-	else if (cfg.security == "WPA2_PSK")vars["SEC_WPA2"] = "selected";
-	else if (cfg.security == "WPA_WPA2_PSK") vars["SEC_WPA12"] = "selected";
-	else vars["SEC_OPEN"] = "selected";
-
-	response.sendTemplate(tmpl);
+	response.setCache(86400, true); // It's important to use cache for better performance.
+	response.sendFile("index.html");
 }
 
 void onReboot(HttpRequest &request, HttpResponse &response)

@@ -1,43 +1,192 @@
-  var xmlHttp = null;
+﻿  var xmlHttp = null;
   var refreshTimer = null;
-  var temp_data;
+  var temp_data1;
   var temp_chart;
-  var temp_options;
+  var chart_created=false;
   
-  // Load the Visualization API and the piechart package.
-  google.load('visualization', '1', {'packages':['corechart']});
-  // Set a callback to run when the Google Visualization API is loaded.
-  google.setOnLoadCallback(createTempChart);
-  // Callback that creates and populates a data table,
-  // instantiates the chart, passes in the data and
-  // draws it.
-  function createTempChart() {
-
-    // Create our data table.
-    temp_data = new google.visualization.DataTable();
-    temp_data.addColumn('string', 'id');
-    temp_data.addColumn('number', 'Temperature 1');
-	temp_data.addColumn('number', 'Temperature 2');
-	temp_data.addColumn('number', 'Temperature Bed');	
-
-    // Set chart options
-    temp_options = {'title':'Temperatures',
-                   'width':400,
-                   'height':300};
-
-    // Instantiate and draw our chart, passing in some options.
-    temp_chart = new google.visualization.LineChart(document.getElementById('chart_div'));
-    temp_chart.draw(temp_data, temp_options);
-  }
-  function updateTempChart(temp1,temp2,temp3)
+  function createTempChart(temp1,temp1Target,temp2,temp2Target,temp3,temp3Target) 
   {
-	//remove first row, if we have more the 100 data entries
-	if(temp_data.getNumberOfRows() > 100) temp_data.removeRow(0);
+	Chart.defaults.global.animation=false;
+	Chart.defaults.global.scaleLineColor ="rgba(255,255,255,0.5)";
+	Chart.defaults.global.scaleFontColor = "rgba(255,255,255,0.5)";
+  
+	var ctx = document.getElementById("chart").getContext("2d");
 	
-	//add a new data entry
-	temp_data.addRow(['', parseFloat(temp1),parseFloat(temp2),parseFloat(temp3)]);
-	//draw chart
-	temp_chart.draw(temp_data, temp_options);
+	// only create 2 data series
+	if(temp2 == "--")
+	{
+		temp_data1 = {
+			labels: [""],
+			datasets: [ {
+				label: "Hotend 1",
+				fillColor: "#444",
+				strokeColor: "rgba(255,0,0,1)",
+				pointColor: "rgba(255,0,0,1)",
+				pointStrokeColor: "#fff",
+				pointHighlightFill: "#fff",
+				pointHighlightStroke: "rgba(255,0,0,1)",
+				data: [temp1]
+				},
+				{
+				label: "Hotend 1 Target",
+				fillColor: "#444",
+				strokeColor: "rgba(255,0,0,0.5)",
+				pointColor: "rgba(255,0,0,0.5)",
+				pointStrokeColor: "#fff",
+				pointHighlightFill: "#fff",
+				pointHighlightStroke: "rgba(255,0,0,0.5)",
+				data: [temp1Target]
+				},
+				{
+				label: "Print Bed",
+				fillColor: "#444",
+				strokeColor: "rgba(0,255,0,1)",
+				pointColor: "rgba(0,255,0,1)",
+				pointStrokeColor: "#fff",
+				pointHighlightFill: "#fff",
+				pointHighlightStroke: "rgba(0,255,0,1)",
+				data: [temp3]
+				},
+				{
+				label: "Print Bed Target",
+				fillColor: "#444",
+				strokeColor: "rgba(0,255,0,0.5)",
+				pointColor: "rgba(0,255,0,0.5)",
+				pointStrokeColor: "#fff",
+				pointHighlightFill: "#fff",
+				pointHighlightStroke: "rgba(0,255,0,0.5)",
+				data: [temp3Target]
+				}
+				]
+			};
+	}
+	else   //create 3 Data series
+	{
+		temp_data1 = {
+			labels: [""],
+			datasets: [ {
+				label: "Hotend 1",
+				fillColor: "#444",
+				strokeColor: "rgba(255,0,0,1)",
+				pointColor: "rgba(255,0,0,1)",
+				pointStrokeColor: "#fff",
+				pointHighlightFill: "#fff",
+				pointHighlightStroke: "rgba(255,0,0,1)",
+				data: [temp1]
+				},
+				{
+				label: "Hotend 1 Target",
+				fillColor: "#444",
+				strokeColor: "rgba(255,0,0,0.5)",
+				pointColor: "rgba(255,0,0,0.5)",
+				pointStrokeColor: "#fff",
+				pointHighlightFill: "#fff",
+				pointHighlightStroke: "rgba(255,0,0,0.5)",
+				data: [temp1Target]
+				},
+				{
+				label: "Hotend 2",
+				fillColor: "#444",
+				strokeColor: "rgba(0,255,0,1)",
+				pointColor: "rgba(0,255,0,1)",
+				pointStrokeColor: "#fff",
+				pointHighlightFill: "#fff",
+				pointHighlightStroke: "rgba(0,255,0,1)",
+				data: [temp2]
+				},
+				{
+				label: "Hotend 2 Target",
+				fillColor: "#444",
+				strokeColor: "rgba(0,255,0,0.5)",
+				pointColor: "rgba(0,255,0,0.5)",
+				pointStrokeColor: "#fff",
+				pointHighlightFill: "#fff",
+				pointHighlightStroke: "rgba(0,255,0,0.5)",
+				data: [temp2Target]
+				},
+				{
+				label: "Print Bed",
+				fillColor: "#444",
+				strokeColor: "rgba(0,0,255,1)",
+				pointColor: "rgba(0,0,255,1)",
+				pointStrokeColor: "#fff",
+				pointHighlightFill: "#fff",
+				pointHighlightStroke: "rgba(0,0,255,1)",
+				data: [temp3]
+				},
+				{
+				label: "Print Bed Target",
+				fillColor: "#444",
+				strokeColor: "rgba(0,0,255,0.5)",
+				pointColor: "rgba(0,0,255,0.5)",
+				pointStrokeColor: "#fff",
+				pointHighlightFill: "#fff",
+				pointHighlightStroke: "rgba(0,0,255,0.5)",
+				data: [temp3Target]
+				}
+				]
+			};
+	}
+
+	var chart_options = {
+		bezierCurve  : true,
+		scaleShowGridLines : true, 
+		pointDot : false,
+		datasetFill:false, 
+		scaleGridLineColor : "rgba(255,255,255,0.5)",
+		multiTooltipTemplate : "<%= value %> °C",
+		tooltipEvents: [],
+		tooltipFillColor: "rgba(0,0,0,0)",
+		onAnimationComplete: function()
+		{
+			var pointsArray = [];
+			pointsArray.push(this.datasets[0].points[this.datasets[0].points.length-1]);
+						
+			this.showTooltip(pointsArray, true);
+		},
+		customTooltips: function(tooltip) {
+			if(tooltip)
+			{
+				var html;
+				html = '<span style="color:' + tooltip.legendColors[0].fill + ';font-size:'+tooltip.fontSize+'px">Hotend 1: ' +tooltip.labels[0] + '<br/></span>';
+				if(tooltip.labels.length > 4) 
+				{
+					html += '<span style="color:' + tooltip.legendColors[2].fill + ';font-size:'+tooltip.fontSize+'px">Hotend 2: ' +tooltip.labels[2] + '<br/></span>';
+					html += '<span style="color:' + tooltip.legendColors[4].fill + ';font-size:'+tooltip.fontSize+'px">Print Bed: ' +tooltip.labels[4] + '<br/></span>';
+				}
+				else
+					html += '<span style="color:' + tooltip.legendColors[2].fill + ';font-size:'+tooltip.fontSize+'px">Print Bed: ' +tooltip.labels[2] + '<br/></span>';
+			
+				
+				document.getElementById('chart_legend').innerHTML =html;
+			}
+		}
+	}
+	
+	temp_chart = new Chart(ctx).Line(temp_data1, chart_options);
+	
+  }
+  function updateTempChart(temp1,temp1Target,temp2,temp2Target,temp3,temp3Target)
+  {
+	if(chart_created == false)
+	{
+		createTempChart(temp1,temp1Target,temp2,temp2Target,temp3,temp3Target);
+		chart_created = true;
+	}
+	else
+	{
+		if(temp_chart.datasets[0].points.length > 20) temp_chart.removeData();
+
+		if(temp2 == "--")
+		{
+			temp_chart.addData([temp1,temp1Target,temp3,temp3Target],"");
+		}
+		else
+		{
+			temp_chart.addData([temp1,temp1Target,temp2,temp2Target,temp3,temp3Target],"");
+		}		
+		temp_chart.update();
+	}
   }
   
   // request temperature values 
@@ -57,73 +206,67 @@
 	if (xmlHttp.readyState == 4) {
 		var data = JSON.parse(xmlHttp.responseText);
 		//temperatures
-		document.getElementById("measure-value-temp1a").innerHTML = data.Temp1 + "&deg;C";
-		document.getElementById("measure-value-temp1a").style.width = ((data.Temp1/300)*100)+"%";
-		document.getElementById("target-value-temp1a").style.width = ((data.Temp1Target/300)*100)+"%";
-		//temperatures
-		document.getElementById("measure-value-temp1b").innerHTML = data.Temp1 + "&deg;C";
-		document.getElementById("measure-value-temp1b").style.width = ((data.Temp1/300)*100)+"%";
-		document.getElementById("target-value-temp1b").style.width = ((data.Temp1Target/300)*100)+"%";
+		document.getElementById("temp1_value").innerHTML = data.Temp1 + "&deg;C";
+		document.getElementById("temp1_bar").style.height = ((data.Temp1/300)*100)+"%";
+		document.getElementById("temp1_goal").style.bottom = ((data.Temp1Target/300)*100)+"%";
 		if(data.Temp2 != "--")
 		{
-			document.getElementById("measure-value-temp2a").innerHTML = data.Temp2 + "&deg;C";
-			document.getElementById("measure-value-temp2a").style.width = ((data.Temp2/300)*100)+"%";
-			document.getElementById("target-value-temp2a").style.width = ((data.Temp2Target/300)*100)+"%";
-			document.getElementById("hotend2a").style.display = 'block';
-			document.getElementById("measure-value-temp2b").innerHTML = data.Temp2 + "&deg;C";
-			document.getElementById("measure-value-temp2b").style.width = ((data.Temp2/300)*100)+"%";
-			document.getElementById("target-value-temp2b").style.width = ((data.Temp2Target/300)*100)+"%";
-			document.getElementById("hotend2b").style.display = 'block';
+			document.getElementById("temp2_value").innerHTML = data.Temp2 + "&deg;C";
+			document.getElementById("temp2_bar").style.height = ((data.Temp2/300)*100)+"%";
+			document.getElementById("temp2_goal").style.bottom = ((data.Temp2Target/300)*100)+"%";
+			document.getElementById("hotend2").style.display = 'block';
 		}
-		else 
-		{
-			document.getElementById("hotend2a").style.display = 'none';
-			document.getElementById("hotend2b").style.display = 'none';
-		}
-		document.getElementById("measure-value-beda").innerHTML = data.Bed + "&deg;C";
-		document.getElementById("measure-value-beda").style.width = ((data.Bed/300)*100)+"%";
-		document.getElementById("target-value-beda").style.width = ((data.BedTarget/300)*100)+"%";
-		document.getElementById("measure-value-bedb").innerHTML = data.Bed + "&deg;C";
-		document.getElementById("measure-value-bedb").style.width = ((data.Bed/300)*100)+"%";
-		document.getElementById("target-value-bedb").style.width = ((data.BedTarget/300)*100)+"%";
+		else document.getElementById("hotend2").style.display = 'none';
+		document.getElementById("bed_value").innerHTML = data.Bed + "&deg;C";
+		document.getElementById("bed_bar").style.height = ((data.Bed/300)*100)+"%";
+		document.getElementById("bed_goal").style.bottom = ((data.BedTarget/300)*100)+"%";
+	
 		// Position
-		document.getElementById("xPos").innerHTML = data.xPos;
-		document.getElementById("yPos").innerHTML = data.yPos;
-		document.getElementById("zPos").innerHTML = data.zPos;
+		document.getElementById("cur_position").innerHTML = "X "+data.xPos+" Y "+data.yPos+" Z "+data.zPos;
 		// print percentage
-		document.getElementById("print_percent").innerHTML = data.SDpercent;
+		document.getElementById("cur_progress").innerHTML =  data.SDpercent+" %";
+		// print time			
+		document.getElementById("cur_time").innerHTML = data.printTime+" h";
 		if(data.SDselected == "yes")
 		{
 			if(data.SDpercent != "---")
 			{
 				//activate pause btn
-				document.getElementById("pause_btn").style.display = 'block';
+				document.getElementById("pause_btn").style.display = 'inherit';
 				document.getElementById("resume_btn").style.display = 'none';
 			}
 			else
 			{
 				//activate resume btn
 				document.getElementById("pause_btn").style.display = 'none';
-				document.getElementById("resume_btn").style.display = 'block';
+				document.getElementById("resume_btn").style.display = 'inherit';
 			}
 			//activate stop btn
-			document.getElementById("stop_btn").style.display = 'block';
+			document.getElementById("stop_btn").style.display = 'inherit';
 			document.getElementById("print_btn").style.display = 'none';
 		}
 		else
 		{
 			//activate print btn
-			document.getElementById("print_btn").style.display = 'block';
+			document.getElementById("print_btn").style.display = 'inherit';
 			document.getElementById("pause_btn").style.display = 'none';
 			document.getElementById("resume_btn").style.display = 'none';
 			document.getElementById("stop_btn").style.display = 'none';
 		}
-		// print time			
-		document.getElementById("print_time").innerHTML = data.printTime;
-		
 		//update chart 
-		if(data.Temp2 != "--") updateTempChart(data.Temp1,data.Temp2,data.Bed);
-		else updateTempChart(data.Temp1,0,data.Bed);
+		updateTempChart(data.Temp1,data.Temp1Target,data.Temp2,data.Temp2Target,data.Bed,data.BedTarget);
+		
+		//update wifi config
+		document.getElementById("wifi_ssid").value = data.SSID;
+		if(data.MODE == "STATION") document.getElementById("wifi_mode").selectedIndex = 0;
+		else document.getElementById("wifi_mode").selectedIndex = 1;
+		
+		if(data.SEC == "OPEN") document.getElementById("wifi_sec").selectedIndex = 0;
+		else if(data.SEC == "WEP") document.getElementById("wifi_sec").selectedIndex = 1;
+		else if(data.SEC == "WPA_PSK") document.getElementById("wifi_sec").selectedIndex = 2;
+		else if(data.SEC == "WPA2_PSK") document.getElementById("wifi_sec").selectedIndex = 3;
+		else if(data.SEC == "WPA_WPA2_PSK") document.getElementById("wifi_sec").selectedIndex = 4;
+		
 	}
   }
   // set new target temperatures, updates temperature values 
@@ -142,7 +285,7 @@
 	xmlHttp.open("GET", url, true);
 	xmlHttp.send( null );
 	
-	getTemp();
+	getStatus();
   }
   // move any axis by an amount
   function move(amount,axis,speed)
