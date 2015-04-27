@@ -34,7 +34,6 @@
 					</div> <div id="file">
 						<select name="FileDisplay" id="FileDisplay2" size="1"  class="FileSelect"> 
 						</select>
-						<a href="#" onclick="refreshSD();" class="button"> <span>&#x21bb;</span> </a> 	
 					</div>
 				</div>
 						
@@ -102,7 +101,7 @@
 				</div>
 				<a href="#" onclick="settemp(3);" class="button" style="top:-20px"> <span>Set</span> </a>
 				</div>
-				
+				<div id="extrudearea">
 				<!-- Table with Extruder buttons -->
 				<table>
 					<tr>
@@ -131,6 +130,7 @@
 						</td>
 					</tr>
 				</table>
+				</div>
 				</div>	
 			</div>
 			</li>
@@ -140,7 +140,7 @@
 			<label for="tabreiter-0-1">Axes</label>
             <div>	 
 				<!-- Table with all move buttons -->
-				<table>
+				<table id="axisarea">
 					<tr>
 						<td>
 						<input id="move_speed" value="300" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
@@ -155,53 +155,53 @@
 						<td colspan="2" rowspan="2">
 						<a href="#" onclick="home(1);" class="movebutton"> <span>Home X</span> </a>
 						</td><td></td><td>
-						<a href="#" onclick="move(10,2);" class="movebutton"> <span>10</span> </a>
+						<a href="#" onclick="move_axis(10,2);" class="movebutton"> <span>10</span> </a>
 						</td><td></td><td colspan="2" rowspan="2">
 						<a href="#" onclick="home(2);" class="movebutton"> <span>Home Y</span> </a>
 						</td><td></td><td>
-						<a href="#" onclick="move(10,3);" class="movebutton"> <span>10</span> </a>
+						<a href="#" onclick="move_axis(10,3);" class="movebutton"> <span>10</span> </a>
 						</td>
 					</tr>
 					<tr>
 						<td></td><td></td><td>
-						<a href="#" onclick="move(1,2);" class="movebutton"> <span>1</span> </a>
+						<a href="#" onclick="move_axis(1,2);" class="movebutton"> <span>1</span> </a>
 						</td><td></td><td></td><td>
-						<a href="#" onclick="move(1,3);" class="movebutton"> <span>1</span> </a>
+						<a href="#" onclick="move_axis(1,3);" class="movebutton"> <span>1</span> </a>
 						</td>
 					</tr>
 					<tr>
 						<td></td><td></td><td></td><td></td><td>
-						<a href="#" onclick="move(0.1,2);" class="movebutton"> <span>0.1</span> </a>
+						<a href="#" onclick="move_axis(0.1,2);" class="movebutton"> <span>0.1</span> </a>
 						</td><td></td><td></td><td></td><td></td><td>		
-						<a href="#" onclick="move(0.1,3);" class="movebutton"> <span>0.1</span> </a>
+						<a href="#" onclick="move_axis(0.1,3);" class="movebutton"> <span>0.1</span> </a>
 						</td>
 					</tr>
 					<tr>
 						<td>
 						<div class="movebutton movelabel"> <span>-X</span> </div>
 						</td><td>
-						<a href="#" onclick="move(-10,1);" class="movebutton"> <span>-10</span> </a>
+						<a href="#" onclick="move_axis(-10,1);" class="movebutton"> <span>-10</span> </a>
 						</td><td>
-						<a href="#" onclick="move(-1,1);" class="movebutton"> <span>-1</span> </a>
+						<a href="#" onclick="move_axis(-1,1);" class="movebutton"> <span>-1</span> </a>
 						</td><td>
-						<a href="#" onclick="move(-0.1,1);" class="movebutton"> <span>-0.1</span> </a>
+						<a href="#" onclick="move_axis(-0.1,1);" class="movebutton"> <span>-0.1</span> </a>
 						</td><td>
 		 
 						</td><td>
-						<a href="#" onclick="move(0.1,1);" class="movebutton"> <span>0.1</span> </a>
+						<a href="#" onclick="move_axis(0.1,1);" class="movebutton"> <span>0.1</span> </a>
 						</td><td>
-						<a href="#" onclick="move(1,1);" class="movebutton"> <span>1</span> </a>
+						<a href="#" onclick="move_axis(1,1);" class="movebutton"> <span>1</span> </a>
 						</td><td>
-						<a href="#" onclick="move(10,1);" class="movebutton"> <span>10</span> </a>
+						<a href="#" onclick="move_axis(10,1);" class="movebutton"> <span>10</span> </a>
 						</td><td>
 						<div class="movebutton movelabel"> <span>+X</span> </div>
 						</td><td></td>
 					</tr>
 					<tr>
 						<td></td><td></td><td></td><td></td><td>
-						<a href="#" onclick="move(-0.1,2);" class="movebutton"> <span>-0.1</span> </a>
+						<a href="#" onclick="move_axis(-0.1,2);" class="movebutton"> <span>-0.1</span> </a>
 						</td><td></td><td></td><td></td><td></td><td>
-						<a href="#" onclick="move(-0.1,3);" class="movebutton"> <span>-0.1</span> </a>
+						<a href="#" onclick="move_axis(-0.1,3);" class="movebutton"> <span>-0.1</span> </a>
 						</td>
 					</tr>
 					<tr>
@@ -209,18 +209,18 @@
 						<td colspan="2" rowspan="2">
 						<a href="#" onclick="home(3);" class="movebutton"> <span>Home Z</span> </a>
 						</td><td></td><td>
-						<a href="#" onclick="move(-1,2);" class="movebutton"> <span>-1</span> </a>
+						<a href="#" onclick="move_axis(-1,2);" class="movebutton"> <span>-1</span> </a>
 						</td><td></td><td colspan="2" rowspan="2">
 						<a href="#" onclick="home(0);" class="movebutton"> <span>Home All</span> </a>
 						</td><td></td><td>
-						<a href="#" onclick="move(-1,3);" class="movebutton"> <span>-1</span> </a>
+						<a href="#" onclick="move_axis(-1,3);" class="movebutton"> <span>-1</span> </a>
 						</td>
 					</tr>
 					<tr>
 						<td></td><td></td><td>
-						<a href="#" onclick="move(-10,2);" class="movebutton"> <span>-10</span> </a>
+						<a href="#" onclick="move_axis(-10,2);" class="movebutton"> <span>-10</span> </a>
 						</td><td></td><td></td><td>
-						<a href="#" onclick="move(-10,3);" class="movebutton"> <span>-10</span> </a>
+						<a href="#" onclick="move_axis(-10,3);" class="movebutton"> <span>-10</span> </a>
 						</td>
 					</tr>
 
@@ -240,27 +240,21 @@
 			<label for="tabreiter-0-2">Files</label>
 			<div>
 				<div id="sdarea">
-				<table style="width:100%">
+				<table>
 					<colgroup> 
 						<col width="50%"> 
 						<col width="50%"> 
 					</colgroup>
-					<tr> <td rowspan ="3">
+					<tr> <td>
 					<select name="FileDisplay" id="FileDisplay" size="15"  class="FileArea" width="300" style="width: 300px"> 
 					</select>
-					</td> <td>
-					<a href="#" onclick="refreshSD();" class="sdbutton"> <span>Refresh</span> </a> 
 					</td> 
-					</tr><tr><td>
+					<td>
 					<a href="#" onclick="deleteFile();" class="sdbutton"> <span>Delete</span> </a>
 					</td>
-					</tr><tr><td>
-					<a href="#" onclick="printFile();" class="sdbutton"> <span>Print</span> </a> 
-					</td>
-					</tr>
 					<tr>
 						<td colspan="2">
-							<form action="" method="post" enctype="multipart/form-data" style="width:50%;margin:auto">
+							<form action="" method="post" enctype="multipart/form-data" >
 							<input name="file" type="file" id="fileA"/>
 							<input name="upload" value="Upload" type="button" class="sdbutton" onclick="uploadFile();" style="float:right" />
 							</form>
@@ -268,7 +262,7 @@
 					</tr>
 					<tr>
 						<td colspan="2">
-						<progress value="0" max="100" id="file_progress" style="float:none; width:50%" class="FileArea" ></progress> <span id="file_prozent"></span>
+						<progress value="0" max="100" id="file_progress"  class="FileArea" ></progress> <span id="file_prozent"></span>
 						</td>
 					</tr>	
 				</table>

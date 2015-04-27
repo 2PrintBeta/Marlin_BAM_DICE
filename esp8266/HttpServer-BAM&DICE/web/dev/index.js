@@ -267,6 +267,29 @@
 		else if(data.SEC == "WPA2_PSK") document.getElementById("wifi_sec").selectedIndex = 3;
 		else if(data.SEC == "WPA_WPA2_PSK") document.getElementById("wifi_sec").selectedIndex = 4;
 		
+		// update file list
+		if(data.SDinserted)
+		{
+			document.getElementById("FileDisplay").options.length = data.Files.length;
+			document.getElementById("FileDisplay2").options.length = data.Files.length;
+			var numF = 0;
+			for (var i = 0; i < data.Files.length; i++) 
+			{
+				if(data.Files[i].indexOf('.') != -1)
+				{
+					document.getElementById("FileDisplay").options[numF].text = data.Files[i];
+					document.getElementById("FileDisplay2").options[numF].text = data.Files[i];
+					numF++;
+				}
+			}				
+		}
+		else
+		{
+			document.getElementById("FileDisplay").options.length = 1;
+			document.getElementById("FileDisplay2").options.length = 0;
+			document.getElementById("FileDisplay").options[0].text = "No SD card";
+			document.getElementById("FileDisplay2").options[0].text = "No SD card";
+		}		
 	}
   }
   // set new target temperatures, updates temperature values 
@@ -400,7 +423,6 @@
 	var formData = new FormData();
 	//XMLHttpRequest Objekt erzeugen
 	xmlHttp = new XMLHttpRequest();
-	//Fügt dem formData Objekt unser File Objekt hinzu
 	formData.append("file",file);
 	
 	xmlHttp.onreadystatechange = function(e) {

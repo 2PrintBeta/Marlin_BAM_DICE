@@ -10,8 +10,9 @@ struct BAMConfig
 {
 	String NetworkSSID;
 	String NetworkPassword;
-	String isStation;
+	String mode;
 	String security;
+	String ip;
 };
 
 extern BAMConfig ActiveConfig;

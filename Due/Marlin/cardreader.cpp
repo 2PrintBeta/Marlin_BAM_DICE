@@ -378,10 +378,10 @@ void CardReader::openFile(char* name,bool read, bool replace_current/*=true*/)
   
 }
 
-void CardReader::removeFile(char* name)
+bool CardReader::removeFile(char* name)
 {
   if(!cardOK)
-    return;
+    return false;
   file.close();
   sdprinting = false;
   
@@ -410,7 +410,7 @@ void CardReader::removeFile(char* name)
           SERIAL_PROTOCOLPGM("open failed, File: ");
           SERIAL_PROTOCOL(subdirname);
           SERIAL_PROTOCOLLNPGM(".");
-          return;
+          return false;
         }
         else
         {
@@ -434,18 +434,20 @@ void CardReader::removeFile(char* name)
   {
     curDir=&workDir;
   }
-    if (file.remove(curDir, fname)) 
-    {
+  if (file.remove(curDir, fname)) 
+  {
       SERIAL_PROTOCOLPGM("File deleted:");
       SERIAL_PROTOCOLLN(fname);
       sdpos = 0;
-    }
-    else
-    {
+	  return true;
+  }
+  else
+  {
       SERIAL_PROTOCOLPGM("Deletion failed, File: ");
       SERIAL_PROTOCOL(fname);
       SERIAL_PROTOCOLLNPGM(".");
-    }
+	  return false;
+  }
   
 }
 
@@ -483,15 +485,17 @@ void CardReader::write_command(char *buf)
     SERIAL_ERRORLNPGM(MSG_SD_ERR_WRITE_TO_FILE);
   }
 }
-void CardReader::write(char *buf)
+bool CardReader::write(char *buf,uint16_t nbyte)
 {
 	file.writeError = false;
-	file.write(buf);
+	file.write(buf,nbyte);
 	if (file.writeError)
 	{
 		SERIAL_ERROR_START;
 		SERIAL_ERRORLNPGM(MSG_SD_ERR_WRITE_TO_FILE);
+		return false;
 	}
+	return true;
 }
 
 void CardReader::checkautostart(bool force)
@@ -642,6 +646,7 @@ void CardReader::printingHasFinished()
           enquecommand_P(PSTR(SD_FINISHED_RELEASECOMMAND));
       }
       autotempShutdown();
+	  starttime=0;
     }
 }
 #endif //SDSUPPORT

@@ -1,7 +1,8 @@
-#include "../include/webserver.h"
 
 #include <SmingCore/SmingCore.h>
 #include "../include/configuration.h"
+#include "../include/webserver.h"
+#include "../include/arduino_com.h"
 
 HttpServer server;
 FTPServer ftp;
@@ -51,10 +52,17 @@ void onGet(HttpRequest &request, HttpResponse &response)
 			json["printTime"] = curState.printTime.c_str();
 			json["SDselected"] = curState.SDselected.c_str();
 
+			json["SDinserted"] = curState.SDinserted;
+			json["NumSDFiles"] = curState.numSDEntries;
+			JsonArray& files = json.createNestedArray("Files");
+			for(int i = 0; i < curState.numSDEntries; i++)
+			{
+				files.add(curState.SDEntries[i].c_str());
+			}
+
 			json["SSID"] = ActiveConfig.NetworkSSID.c_str();
 			json["PWD"] = ActiveConfig.NetworkPassword.c_str();
-			if(ActiveConfig.isStation == "yes") json["MODE"] = "STATION";
-			else json["MODE"] = "AP";
+			json["MODE"] = ActiveConfig.mode.c_str();
 			json["SEC"] = ActiveConfig.security.c_str();
 
 			response.sendJsonObject(stream);
@@ -65,53 +73,7 @@ void onGet(HttpRequest &request, HttpResponse &response)
 	else response.forbidden();
 }
 
-void onGetLong(HttpRequest &request, HttpResponse &response)
-{
-	if(uploadInProgress)
-	{
-		response.forbidden();
-		return;
-	}
-	if (request.getRequestMethod() == RequestMethod::GET)
-	{
-		String query;
-		if(request.getQueryParameter("files").length() > 0)
-		{
-			query = "LIST";
-		}
 
-		//ask arduino
-		if(query.length() > 0)
-		{
-			Serial.println(query);
-			response.setContentType(ContentType::JSON);
-
-			//wait for response
-			int starttime = millis();
-			while(1)
-			{
-				String resp = Serial.readStringUntil('\n');
-
-				if(resp.startsWith("END")) break;
-				else response.sendString(resp);
-
-				if((millis() - starttime) > 1000)
-				{
-					response.sendString("{\"SD\":\"timeout\"}");
-					break;
-				}
-			}
-
-		}
-		else
-		{
-			response.setContentType(ContentType::JSON);
-			response.sendString("{\"error\":1, \"message\":\"Failed\"}");
-		}
-
-	}
-	else response.forbidden();
-}
 void onSet(HttpRequest &request, HttpResponse &response)
 {
 	if(uploadInProgress)
@@ -125,91 +87,81 @@ void onSet(HttpRequest &request, HttpResponse &response)
 		if(request.getQueryParameter("heater").length() > 0 &&
 		   request.getQueryParameter("temp").length() > 0)
 		{
-			query = "SETTEMP ";
-			query.concat(request.getQueryParameter("heater"));
-			query.concat(" ");
-			query.concat(request.getQueryParameter("temp"));
+			char heater = request.getQueryParameter("heater").toInt();
+			short temp = request.getQueryParameter("temp").toInt();
 
+			unsigned char data[3];
+			memcpy(data,&heater,1);
+			memcpy(data+1,&temp,2);
+			sendActiveCmd(eSetTemp,3,data);
 		}
 		else if(request.getQueryParameter("home").length() > 0 )
 		{
-			query = "HOME ";
-			query.concat(request.getQueryParameter("home"));
+			unsigned char data = request.getQueryParameter("home").toInt();
+			sendActiveCmd(eHome,1,&data);
 		}
 		else if(request.getQueryParameter("delete").length() > 0 )
 		{
-			query = "DELETE ";
-			query.concat(request.getQueryParameter("delete"));
+			char data[60];
+			strncpy((char*)data,request.getQueryParameter("delete").c_str(),60);
+			data[59] =0;
+			sendActiveCmd(eDelete,strlen(data),(unsigned char*)data);
+
 		}
 		else if(request.getQueryParameter("print").length() > 0 )
 		{
-			query = "PRINT ";
-			query.concat(request.getQueryParameter("print"));
+			char data[60];
+			strncpy((char*)data,request.getQueryParameter("print").c_str(),60);
+			data[59] =0;
+			sendActiveCmd(ePrint,strlen(data),(unsigned char*)data);
+
 		}
 		else if(request.getQueryParameter("pause").length() > 0 )
 		{
-			query = "PAUSE";
+			unsigned char data;
+			sendActiveCmd(ePause,0,&data);
 		}
 		else if(request.getQueryParameter("resume").length() > 0 )
 		{
-			query = "RESUME";
+			unsigned char data;
+			sendActiveCmd(eResume,0,&data);
 		}
 		else if(request.getQueryParameter("stop").length() > 0 )
 		{
-			query = "STOP";
+			unsigned char data;
+			sendActiveCmd(eStop,0,&data);
 		}
 		else if(request.getQueryParameter("move").length() > 0 &&
 		   request.getQueryParameter("axis").length() > 0 &&
 		   request.getQueryParameter("speed").length() > 0)
 		{
-			switch(request.getQueryParameter("axis").toInt())
-			{
-				case 1:
-					query = "MOVE ";
-					query.concat(request.getQueryParameter("move"));
-					query.concat(" 0 0 0 ");
-					query.concat(request.getQueryParameter("speed"));
-					break;
-				case 2:
-					query = "MOVE 0 ";
-					query.concat(request.getQueryParameter("move"));
-					query.concat(" 0 0 ");
-					query.concat(request.getQueryParameter("speed"));
-					break;
-				case 3:
-					query = "MOVE 0 0 ";
-					query.concat(request.getQueryParameter("move"));
-					query.concat(" 0 ");
-					query.concat(request.getQueryParameter("speed"));
-					break;
-				case 4:
-					query = "MOVE 0 0 0 ";
-					query.concat(request.getQueryParameter("move"));
-					query.concat(" ");
-					query.concat(request.getQueryParameter("speed"));
-					break;
-				default:
-					break;
-			}
+			unsigned char data[20] = {0};
+			float speed =request.getQueryParameter("speed").toFloat();
+			float amount = request.getQueryParameter("move").toFloat();
+			int axis = request.getQueryParameter("axis").toInt();
+			if(axis == 1) memcpy(data,&amount,4);
+			if(axis == 2) memcpy(data+4,&amount,4);
+			if(axis == 3) memcpy(data+8,&amount,4);
+			if(axis == 4) memcpy(data+12,&amount,4);
+			memcpy(data+16,&speed,4);
+			sendActiveCmd(eMove,20,data);
+
 		}
-		//ask arduino
-		if(query.length() > 0)
+		//check answer
+		JsonObjectStream* stream = new JsonObjectStream();
+		JsonObject& json = stream->getRoot();
+		if(cmd_failed == false)
 		{
-			Serial.println(query);
-			//wait for answer
-			String resp = Serial.readStringUntil('\n');
-			if(resp.indexOf("ok") != -1)
-			{
-				response.setContentType(ContentType::JSON);
-				response.sendString("{\"error\":0, \"message\":\"OK\"}");
-			}
-			else
-			{
-				response.setContentType(ContentType::JSON);
-				response.sendString("{\"error\":1, \"message\":\"Failed\"}");
-			}
+			json["error"] = "0";
+			json["message"] = "ok";
 		}
-		else response.forbidden();
+		else
+		{
+			json["error"] = "1";
+			json["message"] = cmd_error_str.c_str();
+		}
+		response.sendJsonObject(stream);
+
 	}
 	else response.forbidden();
 }
@@ -285,13 +237,10 @@ bool onPost(HttpRequest &request,pbuf* buf)
 
 		// open file
 		uploadInProgress = true;
-		Serial.print("UPLOAD ");
-		Serial.println(filename);
-		//wait for response
-		String response = Serial.readStringUntil('\n');
-		if(response.indexOf("ok") == -1)
+		sendActiveCmd(eOpenFile,filename.length(),(unsigned char*)filename.c_str());
+		if(cmd_failed)
 		{
-			postError = response;
+			postError = cmd_error_str;
 			//reset state
 			postDataProcessed = 0;
 			postState =0;
@@ -317,13 +266,10 @@ bool onPost(HttpRequest &request,pbuf* buf)
 		else test = NetUtils::pbufStrCopy(buf,start,data_len - start);
 
 		//send data
-		Serial.print(test.c_str());
-		Serial.write(0);
-		//wait for response
-		String response = Serial.readStringUntil('\n');
-		if(response.indexOf("ok") == -1)
+		sendActiveCmd(eFileData,test.length(),(unsigned char*)test.c_str());
+		if(cmd_failed)
 		{
-			postError = response;
+			postError = cmd_error_str;
 			//reset state
 			postDataProcessed = 0;
 			postState =0;
@@ -338,15 +284,11 @@ bool onPost(HttpRequest &request,pbuf* buf)
 	//check if we got all data
 	if (postDataProcessed == request.getContentLength())
 	{
-		//close file
-		Serial.println("ENDUPLOAD");
-		Serial.write(0);
-		//wait for response
-		String response = Serial.readStringUntil('\n');
-		if(response.indexOf("ok") == -1)
+		unsigned char data;
+		sendActiveCmd(eCloseFile,0,&data);
+		if(cmd_failed)
 		{
-			// Error handling
-			postError = response;
+			postError = cmd_error_str;
 			//reset state
 			postDataProcessed = 0;
 			postState =0;
@@ -375,7 +317,7 @@ void onConfiguration(HttpRequest &request, HttpResponse &response)
 		{
 			cfg.NetworkSSID = request.getPostParameter("SSID");
 			if(request.getPostParameter("Password") > 0) cfg.NetworkPassword = request.getPostParameter("Password");
-			cfg.isStation = request.getPostParameter("STATION");
+			cfg.mode = request.getPostParameter("MODE");
 			cfg.security = request.getPostParameter("SECURITY");
 		}
 
@@ -422,12 +364,19 @@ void startWebServer()
 	curState.SDselected = "no";
 	curState.printTime = "--:--";
 
+	curState.SDinserted = false;
+	curState.numSDEntries =0;
+
+	for(int i=0; i < MAX_FILENAMES; i++)
+	{
+		curState.SDEntries[i] = "";
+	}
+
 	server.listen(80);
 	server.addPath("/", onConfiguration);
 	server.addPath("/index.html", onConfiguration);
 	server.addPath("/upload", onUpload);
 	server.addPath("/get", onGet);
-	server.addPath("/getLong", onGetLong);
 	server.addPath("/set", onSet);
 	server.addPath("/reboot", onReboot);
 

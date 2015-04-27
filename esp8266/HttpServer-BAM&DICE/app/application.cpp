@@ -2,209 +2,21 @@
 #include <SmingCore/SmingCore.h>
 #include "../include/configuration.h"
 #include "../include/webserver.h"
+#include "../include/arduino_com.h"
+
 
 Timer cmdTimer;
 
-enum eCMDs
-{
-	eNETWORK,
-	eTEMP,
-	ePOS,
-	eSD
-};
-
-eCMDs cmd_state = eNETWORK;
-
-void parseCmd()
-{
-	// do not request new state while upload is running
-	if(uploadInProgress) return;
-
-	//request different states everytime
-	String resp;
-	bool network_changed = false;
-	switch(cmd_state)
-	{
-		case eNETWORK:
-			Serial.println("NETWORK");
-			//wait for answer
-			resp = Serial.readStringUntil('\n');
-			resp.trim();
-			if(resp.startsWith("SEC"))
-			{
-				if((resp.substring(4).length() > 0) &&
-				   (ActiveConfig.security != resp.substring(4)))
-				{
-					ActiveConfig.security = resp.substring(4);
-					network_changed = true;
-				}
-			}
-			else return;
-
-			Serial.println("ok");
-			resp = Serial.readStringUntil('\n');
-			resp.trim();
-			if(resp.startsWith("MODE"))
-			{
-				if(resp.substring(5).length() > 0)
-				{
-					if(resp.substring(5).startsWith("STATION") && (ActiveConfig.isStation == "no"))
-					{
-						ActiveConfig.isStation = "yes";
-						network_changed = true;
-					}
-					else if(resp.substring(5).startsWith("AP") && (ActiveConfig.isStation == "yes"))
-					{
-						ActiveConfig.isStation = "no";
-						network_changed = true;
-					}
-				}
-			}
-			else return;
-
-			Serial.println("ok");
-			resp = Serial.readStringUntil('\n');
-			resp.trim();
-			if(resp.startsWith("SSID"))
-			{
-				if(resp.substring(5).length() > 0)
-				{
-					if(ActiveConfig.NetworkSSID != resp.substring(5))
-					{
-						ActiveConfig.NetworkSSID = resp.substring(5);
-						network_changed = true;
-					}
-				}
-			}
-			else return;
-
-			Serial.println("ok");
-			resp = Serial.readStringUntil('\n');
-			resp.trim();
-			if(resp.startsWith("PWD"))
-			{
-				if(resp.substring(4).length() > 0)
-				{
-					if(ActiveConfig.NetworkPassword != resp.substring(4))
-					{
-						ActiveConfig.NetworkPassword = resp.substring(4);
-						network_changed = true;
-					}
-				}
-			}
-			else return;
-
-			// restart system if network changed
-			if(network_changed)
-			{
-				Serial.println("restarting");
-				saveConfig(ActiveConfig);
-				System.restart();
-			}
-			cmd_state = eTEMP;
-		break;
-		case eTEMP:
-			Serial.println("TEMP");
-			resp = Serial.readStringUntil('\n');
-			if(resp.startsWith("TEMP"))
-			{
-				// parse temp values
-				resp = resp.substring(5);
-				int startpos =0;
-				int endpos = resp.indexOf(' ');
-				curState.temp1 = resp.substring(startpos,endpos);
-				startpos = endpos+1;
-				endpos = resp.indexOf(' ',startpos);
-				curState.temp1Target = resp.substring(startpos,endpos);
-				startpos = endpos+1;
-				endpos = resp.indexOf(' ',startpos);
-				curState.temp2 = resp.substring(startpos,endpos);
-				startpos = endpos+1;
-				endpos = resp.indexOf(' ',startpos);
-				curState.temp2Target = resp.substring(startpos,endpos);
-				startpos = endpos+1;
-				endpos = resp.indexOf(' ',startpos);
-				curState.tempBed = resp.substring(startpos,endpos);
-				startpos = endpos+1;
-				endpos = resp.indexOf(' ',startpos);
-				curState.tempBedTarget = resp.substring(startpos,endpos);
-			}
-			else return;
-			cmd_state = ePOS;
-		break;
-		case ePOS:
-			Serial.println("POS");
-			resp = Serial.readStringUntil('\n');
-			if(resp.startsWith("POS"))
-			{
-				// parse positions
-				resp = resp.substring(4);
-				int startpos =0;
-				int endpos = resp.indexOf(' ');
-				curState.xPos = resp.substring(startpos,endpos);
-				startpos = endpos+1;
-				endpos = resp.indexOf(' ',startpos);
-				curState.yPos = resp.substring(startpos,endpos);
-				startpos = endpos+1;
-				endpos = resp.indexOf(' ',startpos);
-				curState.zPos = resp.substring(startpos,endpos);
-			}
-			else return;
-			cmd_state = eSD;
-		break;
-		case eSD:
-			Serial.println("SD");
-			resp = Serial.readStringUntil('\n');
-			if(resp.startsWith("SD"))
-			{
-				//parse SD State
-				resp = resp.substring(3);
-				int startpos =0;
-				int endpos = resp.indexOf(' ');
-				curState.SDselected = resp.substring(startpos,endpos);
-				startpos = endpos+1;
-				endpos = resp.indexOf(' ',startpos);
-				curState.SDpercent = resp.substring(startpos,endpos);
-				startpos = endpos+1;
-				endpos = resp.indexOf(' ',startpos);
-				curState.printTime = resp.substring(startpos,endpos);
-			}
-			else return;
-			cmd_state = eNETWORK;
-		break;
-		default:
-			return;
-	}
-}
-
 void sendAPmode()
 {
-	//advertise IP
-	Serial.print("IP ");
-	Serial.println(WifiAccessPoint.getIP());
-
-	//advertise MODE
-	Serial.print("MODE ");
-	Serial.println("AP");
-
-	//advertise SSID
-	Serial.print("SSID ");
-	Serial.println(ActiveConfig.NetworkSSID);
+	ActiveConfig.ip = WifiAccessPoint.getIP().toString();
+	ActiveConfig.mode = "AP";
 }
 
 void sendSTATIONmode()
 {
-	//advertise IP
-	Serial.print("IP ");
-	Serial.println(WifiStation.getIP());
-
-	//advertise MODE
-	Serial.print("MODE ");
-	Serial.println("STATION");
-
-	//advertise SSID
-	Serial.print("SSID ");
-	Serial.println(ActiveConfig.NetworkSSID);
+	ActiveConfig.ip = WifiStation.getIP().toString();
+	ActiveConfig.mode = "STATION";
 }
 
 // Will be called when WiFi station was connected to AP
@@ -242,7 +54,7 @@ void init()
 
 	//start wireless
 	ActiveConfig = loadConfig();
-	if(ActiveConfig.isStation == "yes")
+	if(ActiveConfig.mode == "STATION")
 	{
 		// set up station
 		WifiStation.config(ActiveConfig.NetworkSSID, ActiveConfig.NetworkPassword);
@@ -272,6 +84,6 @@ void init()
 	}
 
 	// start cmd interface
-	cmdTimer.initializeMs(500, parseCmd).start();
+	cmdTimer.initializeMs(500, handle_ardunio).start();
 
 }

@@ -17,26 +17,26 @@ BAMConfig loadConfig()
 		JsonObject& root = jsonBuffer.parseObject(jsonString);
 
 		JsonObject& network = root["network"];
-		cfg.NetworkSSID = String((const char*)network["ssid"]);
-		cfg.NetworkPassword = String((const char*)network["password"]);
-		cfg.isStation = String((const char*)network["isStation"]);
-		cfg.security = String((const char*)network["security"]);
+		if(network.containsKey("ssid"))cfg.NetworkSSID = network["ssid"].asString();
+		else cfg.NetworkSSID = "BAM&DICE";
+
+		if(network.containsKey("password")) cfg.NetworkPassword = network["password"].asString();
+		else cfg.NetworkPassword = "";
+
+		if(network.containsKey("mode")) cfg.mode = network["mode"].asString();
+		else cfg.mode = "AP";
+
+		if(network.containsKey("security")) cfg.security = network["security"].asString();
+		else cfg.security = "OPEN";
+
 		delete[] jsonString;
 	}
 	else
 	{
-		/*
-		//TEST
-		cfg.NetworkSSID = "BETA-NET";
-		cfg.NetworkPassword = "8127969022774633";
-		cfg.isStation = "yes";
-		cfg.security = "OPEN";
-	*/
-
 
 		cfg.NetworkSSID = "BAM&DICE";
 		cfg.NetworkPassword = "";
-		cfg.isStation = "no";
+		cfg.mode = "AP";
 		cfg.security = "OPEN";
 
 	}
@@ -54,7 +54,7 @@ void saveConfig(BAMConfig& cfg)
 	root["network"] = network;
 	network["ssid"] = cfg.NetworkSSID.c_str();
 	network["password"] = cfg.NetworkPassword.c_str();
-	network["isStation"] = cfg.isStation.c_str();
+	network["mode"] = cfg.mode.c_str();
 	network["security"] = cfg.security.c_str();
 
 	char buf[3048];

@@ -1,7 +1,7 @@
 html, body {
 	height:100%;
 	margin: 0;
-	overflow: hidden;
+	overflow: scroll;
 }
 
 body {
@@ -359,22 +359,39 @@ body {
 
 #sdarea {
 	position: relative;
-	width: 100%;
-	margin: 10 auto;
+	width: 400px;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 10px;	
 }
 #statusarea {
 	position: relative;
 	width: 100%;
-	margin: 10 auto;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 10px;
 }
 #configarea {
 	width:50%;
-	margin: 0 auto;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 10px
 }
 #temparea {
 	margin-left:auto;
 	margin-right:auto;
-	width:600px
+	width:600px;
+	margin-top:10px;
+}
+#extrudearea
+{
+	margin-top:90px;
+	float:right;
+}
+#axisarea
+{
+    margin-left: auto; 
+	margin-right: auto;"
 }
 .temp-meter {
   margin-left: 30px;
@@ -430,7 +447,7 @@ body {
     position: absolute;
     right: 2px;
 	width: 40px;
-	color #222;
+	color: #222;
   }
 
 .bulb {

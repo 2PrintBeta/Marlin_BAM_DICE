@@ -1,9 +1,7 @@
 #ifndef INCLUDE_WEBSERVER_H_
 #define INCLUDE_WEBSERVER_H_
 
-#include <user_config.h>
-#include <SmingCore/SmingCore.h>
-
+#define MAX_FILENAMES 50
 struct BAMState
 {
 	String temp1;
@@ -18,6 +16,10 @@ struct BAMState
 	String SDselected;
 	String SDpercent;
 	String printTime;
+
+	bool SDinserted;
+	uint16_t numSDEntries;
+	String SDEntries[MAX_FILENAMES];
 };
 
 extern BAMState curState;

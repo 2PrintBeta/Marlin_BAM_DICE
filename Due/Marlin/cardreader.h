@@ -14,14 +14,14 @@ public:
   
   void initsd();
   void write_command(char *buf);
-  void write(char *buf);
+  bool write(char *buf,uint16_t nbyte);
   //files auto[0-9].g on the sd card are performed in a row
   //this is to delay autostart and hence the initialisaiton of the sd card to some seconds after the normal init, so the device is available quick after a reset
 
   void checkautostart(bool x); 
   void openFile(char* name,bool read,bool replace_current=true);
   void openLogFile(char* name);
-  void removeFile(char* name);
+  bool removeFile(char* name);
   void closefile(bool store_location=false);
   void release();
   void startFileprint();
@@ -52,8 +52,8 @@ public:
 public:
   bool saving;
   bool logging;
-  bool sdprinting ;  
-  bool cardOK ;
+  volatile bool sdprinting ;  
+  volatile bool cardOK ;
   char filename[13];
   char longFilename[LONG_FILENAME_LENGTH];
   bool filenameIsDir;

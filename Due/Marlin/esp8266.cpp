@@ -25,13 +25,10 @@
 #include "cardreader.h"
 #ifdef HAVE_ESP8266
 
-#define DIN A3
-#define DOUT A4
-
 #define wifi Serial1
 #define TIMEOUT 5000
 #define WIFI_BAUDRATE 1000000
-#define DEBUG 0
+#define DEBUG 1
 
 #define STORAGE_SIZE 50
 char address[STORAGE_SIZE] = {0};
@@ -43,30 +40,115 @@ char new_mode[STORAGE_SIZE] = {0};
 char new_ssid[STORAGE_SIZE] = {0};
 char new_pwd[STORAGE_SIZE] = {0};
 char new_sec[STORAGE_SIZE] = {0};
-
-#define CMD_LEN 250
-char cmd_buf[CMD_LEN];
-int cmd_pos=0;
+bool network_changed = false;
 
 static float manual_feedrate[] = MANUAL_FEEDRATE;
 
 extern char* lcd_status_message;
+
+
+///////////////////////////////////////////////////////////////////
+// COm Protocol
+///////////////////////////////////////////////////////////////////
+enum ESP_CMDs
+{
+	//commands
+	eSync=0,
+	eSetTemp,
+	eMove,
+	eHome,
+	ePrint,
+	ePause,
+	eResume,
+	eStop,
+	eDelete,
+	eOpenFile,
+	eCloseFile,
+	eFileData,
+	
+	eGetTemp,
+	eGetPos,
+	eGetNetworkChanged,
+	eGetNetworkSSID,
+	eGetNetworkPWD,
+	eGetNetworkMode,
+	eGetNetworkSec,
+	eGetPrintState,
+	
+	eGetSDState,
+	eGetNumSDEntries,
+	eGetSDEntry,
+	
+	eSetNetworkSSID,
+	eSetNetworkMode,
+	eSetNetworkIP,
+	
+	// answers
+	eOk,
+	eError,
+	
+	//used for debug
+	eDebug,
+};
+
+struct comm_package
+{
+	ESP_CMDs cmd;
+	unsigned char length;
+	unsigned char data[61];
+	unsigned char checksum;  //xor sum from cmd till data end
+};
+
+//buffers for the commands/answers
+comm_package esp_cmd;
+int esp_data_index=0;
+comm_package esp_answer;
+
+enum ESP_COMM_STATE
+{
+	eIdle,
+	eHeader,
+	eData,
+	eChecksum,
+};
+
+ESP_COMM_STATE comm_state = eIdle;
+unsigned long cmd_start_time=0;
+#define CMD_TIMEOUT 500
+#define CRC_MAGIC 0xE
+
+/////////////////////////////////////////////////////////////////
+// helper functions
+////////////////////////////////////////////////////////////////
+void ESP8266_move(double x, double y, double z, double e,int f);
+String createShortFilename(char* name);
+void debug(char *msg) ;
+void handle_cmd();
+unsigned char calc_crc(comm_package* pkt);
+void esp_send_2(bool ok, char* data);
+void esp_send();
+
+
 //////////////////////////////////////////////////////////////////////
 /// Init stuff 
 ////////////////////////////////////////////////////////////////////
 
 void init_esp8266()
 {
-	// init wifi 
-	wifi.begin(WIFI_BAUDRATE);
-	wifi.setTimeout(TIMEOUT);
-	clearResults();
-		
+	// inti variables
+	comm_state = eIdle;
 	strcpy(address,"NONE");
 	strcpy(mode,"MODE: ");
 	strcpy(ssid,"SSID: ");
+
+	//TODO setup pins, reset esp
 	
-	//TODO reset
+	// init wifi 
+	wifi.begin(WIFI_BAUDRATE);
+	wifi.setTimeout(TIMEOUT);
+		
+	// clear data
+	while(wifi.available()) wifi.read();
 }
 
 char* esp8266_ip()
@@ -88,340 +170,542 @@ char* esp8266_mode()
 
 void handle_esp8266()
 {
-	bool cmd_available = false;
+	bool cmd_ready = false;
+	//read from wifi serial, aslong as there are chars available
 	while(wifi.available())
 	{
-		// get char
-		cmd_buf[cmd_pos] = wifi.read();
-		
-		//check for end of cmd
-		if(cmd_buf[cmd_pos] == '\n')
+		unsigned char c = wifi.read();
+		switch(comm_state)
 		{
-			cmd_buf[cmd_pos+1] = 0;
-			cmd_available = true;
-			break;
+			case eIdle:
+				esp_cmd.cmd=(ESP_CMDs)c;
+				//TODO check for valid command ?
+				esp_data_index =0;
+				cmd_start_time = millis(); //remember start time for timeouts
+				comm_state = eHeader;
+				break;
+			case eHeader:
+				esp_cmd.length = c;
+				if(esp_cmd.length > 60) 
+				{	
+					debug("Invalid Length recieved from esp");
+					comm_state = eIdle;
+				}
+				if(esp_cmd.length > 0) comm_state = eData;
+				else comm_state = eChecksum;
+				break;
+			case eData:
+				esp_cmd.data[esp_data_index] = c;
+				esp_data_index++;
+				if(esp_data_index >= esp_cmd.length) comm_state = eChecksum;
+				break;
+			case eChecksum:
+				esp_cmd.checksum = c;
+				comm_state = eIdle;
+				cmd_ready = true;
+				break;
 		}
-		//increment char pos
-		cmd_pos++;
-		//check for overflow !
-		if(cmd_pos >= CMD_LEN)
-		{
-			cmd_pos=0;
-			MYSERIAL.println("Error: got a too long command from ESP8266 ! ");
-			MYSERIAL.println(cmd_buf);
-		}
+		// stop reading if we have a full command
+		if(cmd_ready) break;
+	}
+
+	// we have a cmd in buffer, handle it
+	if(cmd_ready)
+	{
+		handle_cmd();
 	}
 	
-	//process commands
-	if(cmd_available)
+	//check for timeouts
+	if(comm_state != eIdle)
 	{
-		esp8266_process_cmd(cmd_buf,cmd_pos);
-		//reset command
-		cmd_pos=0;
+		if((millis() -cmd_start_time) > CMD_TIMEOUT)
+		{
+			debug("esp_cmd timeout");
+			comm_state = eIdle;
+			//close file
+			if(card.isFileOpen()) card.closefile();
+		}
 	}
 }
 
-void esp8266_process_cmd(char* cmd,int cmd_pos)
-{	
-	//state commands
-	if(strncmp(cmd,"IP",2)==0)
+void handle_cmd()
+{
+	//check checksum
+	unsigned char checksum = calc_crc(&esp_cmd);
+	if(esp_cmd.checksum != checksum)
 	{
-		//store IP
-		cmd[cmd_pos-1] = 0;
-		snprintf(address,STORAGE_SIZE,"%s",cmd+3);
+		debug("Invalid CRC recieved from ESP");
+		return;
 	}
-	else if(strncmp(cmd,"MODE",4)==0)
-	{
-		//store mode
-		cmd[cmd_pos-1] = 0;
-		snprintf(mode,STORAGE_SIZE,"MODE:%s",cmd+5);
-	}
-	else if(strncmp(cmd,"SSID",4)==0)
-	{
-		//store ssid
-		cmd[cmd_pos-1] = 0;
-		snprintf(ssid,STORAGE_SIZE,"SSID:%s",cmd+5);
-	}
-	//STATUS request commands
-	else if(strncmp(cmd,"NETWORK",7)==0)
-	{
-		wifi.print("SEC ");
-		wifi.println(new_sec);
-		new_sec[0] = 0;
-		searchResults("ok\r\n",100,DEBUG);
-		wifi.print("MODE ");
-		wifi.println(new_mode);
-		new_mode[0] = 0;
-		searchResults("ok\r\n",100,DEBUG);
-		wifi.print("SSID ");
-		wifi.println(new_ssid);
-		new_ssid[0] = 0;
-		searchResults("ok\r\n",100,DEBUG);
-		wifi.print("PWD ");
-		wifi.println(new_pwd);
-		new_pwd[0]=0;
-	}
-	else if(strncmp(cmd,"TEMP",4)==0)
-	{
-		String info = "TEMP ";
-		info += degHotend(0);
-		info += " ";
-		info += degTargetHotend(0);
-		info += " ";
-		#if EXTRUDERS > 1
-		info += degHotend(1);
-		info += " ";
-		info += degTargetHotend(1);
-		info += " ";
-		#else
-		info += "-- -- ";
-		#endif
-		info +=degBed();
-		info += " ";
-		info += degTargetBed();
-		info += " ";
-					
-		//send string
-		wifi.println(info.c_str());			
-	}
-	else if(strncmp(cmd,"POS",3)==0)
-	{
-		String info = "POS ";
-		info += current_position[X_AXIS];
-		info += " ";
-		info += current_position[Y_AXIS];
-		info += " ";
-		info += current_position[Z_AXIS];
-		info += " ";
-		//send string
-		MYSERIAL.println(info.c_str());
-		wifi.println(info.c_str());
-	}
-	else if(strncmp(cmd,"SD",2)==0)
-	{
-		String info = "SD ";
-		//is a file selected
-		if (card.isFileOpen()) info += "yes "; 
-		else info += "no ";
-		// are we currently printing (with percent)
-		if (card.sdprinting) info += card.percentDone();
-		else info += "---";
-						
-		info += " ";
-		//current elapsed print time
-		if(starttime != 0)
-		{
-			uint16_t time = millis()/60000 - starttime/60000;
-			if((time/60) < 10) info+="0";
-			info += time/60;
-			info += ':';
-			if((time%60) <10) info+="0";
-			info += time%60;
-			info += " ";
-		}else{
-			info += "--:-- ";
-		}
-		//send string
-		wifi.println(info);
-	}
-	//move commands
-	else if(strncmp(cmd,"MOVE",4)==0)
-	{
-		//split string
-		double data[5];
-		int index =0;
-		char* ptr = strtok(cmd+5, " ");
-		while(ptr != NULL) 
-		{
-			data[index] = strtod(ptr,NULL);
-			index++;
-			// naechsten Abschnitt erstellen
-			ptr = strtok(NULL, " ");
-		}
-		//execute move
-		ESP8266_move(data[0],data[1],data[2],data[3],data[4]);
-		wifi.println("ok");
-	}
-	//SETTEMP command
-	else if(strncmp(cmd,"SETTEMP",7)==0)
-	{
-		//split string
-		int data[2];
-		int index;
-		char* ptr = strtok(cmd+7, " ");
-		while(ptr != NULL) 
-		{
-			data[index] = atoi(ptr);
-			index++;
-			// naechsten Abschnitt erstellen
-			ptr = strtok(NULL, " ");
-		}
-		//set values
-		if(data[0] == 1)
-		{
-			if(data[1] > HEATER_0_MAXTEMP - 15) data[1] =  HEATER_0_MAXTEMP - 15;
-			target_temperature[0] = data[1];
-		}
-		#if EXTRUDERS > 1
-		if(data[0] == 2)
-		{
-			if(data[1] > HEATER_1_MAXTEMP - 15) data[1] =  HEATER_1_MAXTEMP - 15;
-			target_temperature[1] = data[1];
-		}
-		#endif
-		if(data[0] == 3)
-		{
-			if(data[1] > BED_MAXTEMP - 15) data[1] =  BED_MAXTEMP - 15;
-			target_temperature_bed = data[1];
-		}
-		wifi.println("ok");
-	}
-	//HOME command
-	else if(strncmp(cmd,"HOME",4)==0)
-	{
-		int axis = atoi(cmd+5);
-		switch(axis)
-		{
-			case 0:
-				enquecommand_P(PSTR("G28"));
-				break;
-			case 1:
-				enquecommand_P(PSTR("G28 X"));
-				break;
-			case 2:
-				enquecommand_P(PSTR("G28 Y"));
-				break;
-			case 3:
-				enquecommand_P(PSTR("G28 Z"));
-				break;
-		}
-		wifi.println("ok");
-	}
-	// UPLOAD
-	else if(strncmp(cmd,"UPLOAD",6)==0)
-	{	
-		MYSERIAL.print("File upload: ");
 	
-		//create fitting short filename
-		String filename = createShortFilename(cmd+7);
-		MYSERIAL.println(filename);
-		
-		//open file
-		card.openFile((char*)filename.c_str(),false,true);
-		if(card.isFileOpen()) wifi.println("ok");
-		else  wifi.println("Error file open");
-		
-		char linebuf[100];
-		while(1)
+	MYSERIAL.print("new cmd: ");
+	MYSERIAL.print((int)esp_cmd.cmd);
+	MYSERIAL.print(" ");
+	MYSERIAL.print((int)esp_cmd.length);
+	MYSERIAL.print(" ");
+	esp_cmd.data[esp_cmd.length] =0;
+	MYSERIAL.print((char*)esp_cmd.data);
+	MYSERIAL.print(" ");
+	MYSERIAL.println((int)esp_cmd.checksum);	
+	
+	//handle commands
+	switch(esp_cmd.cmd)
+	{
+		case eDebug:
 		{
-			// get a line of data
-			int num = wifi.readBytesUntil('\0',linebuf,100);
-			if( num == 0)
-			{
-				MYSERIAL.println("Timeout ! ");
-				card.closefile();
-				break;
-			}
-			linebuf[num] = 0;
-			if(strncmp(linebuf,"ENDUPLOAD",9)==0)
-			{
-				card.closefile();
-				wifi.println("ok");
-				MYSERIAL.print("File upload ended");
-				break;
-			}
-			card.write(linebuf);
-			wifi.println("ok");
+			esp_cmd.data[esp_cmd.length] =0;
+			MYSERIAL.print("dbg: ");
+			MYSERIAL.println((char*)esp_cmd.data);
 			
-			//manage other things as this can take loong
-			manage_heater();
-			manage_inactivity();
-			lcd_update();
+			//no send !
+			break;
 		}
+		case eSync:
+		{
+			esp_send_2(true,"");
+			break;
+		}
+		case eSetTemp:
+		{
+			char heater = -1;
+			short temp = -1;
+			memcpy(&heater,esp_cmd.data,1);
+			memcpy(&temp,esp_cmd.data+1,2);
 
-	}
-	// LIST DIR
-	else if(strncmp(cmd,"LIST",4)==0)
-	{	
-		if (card.cardOK)
-		{
-			wifi.println("{ \"SD\":\"ok\",");
+			if(heater == 1)
+			{
+				if(temp > HEATER_0_MAXTEMP - 15) temp=  HEATER_0_MAXTEMP - 15;
+				target_temperature[0] = temp;
+			}
+			#if EXTRUDERS > 1
+			else if(heater == 2)
+			{
+				if(temp > HEATER_1_MAXTEMP - 15) temp =  HEATER_1_MAXTEMP - 15;
+				target_temperature[1] = dtemp;
+			}
+			#endif
+			else if(heater == 3)
+			{
+				if(temp > BED_MAXTEMP - 15) temp =  BED_MAXTEMP - 15;
+				target_temperature_bed = temp;
+			}
+			else
+			{
+				//error
+				esp_send_2(false,"Invalid parameters");
+				break;
+			}
+
+			//send answer
+			esp_send_2(true,"");
+			break;
 		}
-		else  
+		case eMove:
 		{
-			wifi.println("{ \"SD\":\"no SD card\",");
-		}
-		
-		wifi.println("\"Files\":[");
-		//TODO subdirs ? 
-		uint16_t fileCnt = card.getnrfilenames();
-		for(uint16_t i=0;i<fileCnt;i++)
-		{
-			card.getfilename(i);
+			float x,y,z,e,f;
+			memcpy(&x,esp_cmd.data,4);
+			memcpy(&y,esp_cmd.data+4,4);
+			memcpy(&z,esp_cmd.data+8,4);
+			memcpy(&e,esp_cmd.data+12,4);
+			memcpy(&f,esp_cmd.data+16,4);
 			
-			//skip dirs
-			if (card.filenameIsDir) continue;
-			 
-			wifi.print("\"");
-			wifi.print(card.filename);
-			if(i <(fileCnt-1)) wifi.println("\",");
-			else  wifi.println("\"");
+			MYSERIAL.print("move ");
+			MYSERIAL.print(x);
+			MYSERIAL.print(" ");
+			MYSERIAL.print(y);
+			MYSERIAL.print(" ");
+			MYSERIAL.print(z);
+			MYSERIAL.print(" ");
+			MYSERIAL.print(e);
+			MYSERIAL.print(" ");
+			MYSERIAL.println(f);
+			
+			//execute move
+			ESP8266_move(x,y,z,e,f);
+			
+			//send answer
+			esp_send_2(true,"");
+			break;
 		}
-		wifi.println("]}");
-		wifi.println("END");			
-	}
-	//DELETE file
-	else if(strncmp(cmd,"DELETE",6)==0)
-	{	
-		cmd[cmd_pos-1] = 0;
-		card.removeFile(cmd+7);
-		wifi.println("ok");
-	}
-	// Print command
-	else if(strncmp(cmd,"PRINT",5)==0)
-	{	
-		cmd[cmd_pos-1] = 0;
-		char cmd2[30];
-		char* c;
-		sprintf_P(cmd2, PSTR("M23 %s"), cmd+6);
-		for(c = &cmd2[4]; *c; c++)  *c = tolower(*c);
-		enquecommand(cmd2);
-		enquecommand_P(PSTR("M24"));
-		wifi.println("ok");
-	}
-	// Pause command
-	else if(strncmp(cmd,"PAUSE",5)==0)
-	{
-		card.pauseSDPrint();
-		wifi.println("ok");
-	}
-	else if(strncmp(cmd,"RESUME",5)==0)
-	{
-		card.startFileprint();
-		wifi.println("ok");
-	}
-	else if(strncmp(cmd,"STOP",4)==0)
-	{
-	    card.sdprinting = false;
-		card.closefile();
-		quickStop();
-		clearbuffer();
-    
-		if(SD_FINISHED_STEPPERRELEASE)
+		case eHome:
 		{
-			enquecommand_P(PSTR(SD_FINISHED_RELEASECOMMAND));
-		}	
-		autotempShutdown();
+			char axis = esp_cmd.data[0];
+			MYSERIAL.print("home ");
+			MYSERIAL.println((int)axis);
+			switch(axis)
+			{
+				case 0:
+					enquecommand_P(PSTR("G28"));
+					break;
+				case 1:
+					enquecommand_P(PSTR("G28 X"));
+					break;
+				case 2:
+					enquecommand_P(PSTR("G28 Y"));
+					break;
+				case 3:
+					enquecommand_P(PSTR("G28 Z"));
+					break;
+			}
+			//send answer
+			esp_send_2(true,"");
+			break;
+		}
+		case ePrint:
+		{
+			// get data
+			char filename[61];
+			memcpy(filename,esp_cmd.data,esp_cmd.length);
+			filename[esp_cmd.length] = 0;
+		
+			//create a gcode
+			char cmd[65];
+			char* c;
+			sprintf_P(cmd, PSTR("M23 %s"), filename);
+			for(c = &cmd[4]; *c; c++)  *c = tolower(*c);
+			enquecommand(cmd);
+			enquecommand_P(PSTR("M24"));
+			
+			//send answer
+			esp_send_2(true,"");
+			break;
+		}
+		case ePause:
+		{
+			card.pauseSDPrint();
+			//send answer
+			esp_send_2(true,"");
+			break;
+		}
+		case eResume:
+		{
+			card.startFileprint();
+			//send answer
+			esp_send_2(true,"");
+			break;
+		}
+		case eStop:
+		{
+			card.sdprinting = false;
+			card.closefile();
+			quickStop();
+			clearbuffer();
     
-		cancel_heatup = true;
-		wifi.println("ok");
+			if(SD_FINISHED_STEPPERRELEASE)
+			{
+				enquecommand_P(PSTR(SD_FINISHED_RELEASECOMMAND));
+			}	
+			autotempShutdown();
+    
+			cancel_heatup = true;
+			starttime=0;
+			//send answer
+			esp_send_2(true,"");
+			break;
+		}
+		case eDelete:
+		{
+			//check if we have a SD card
+			if(!card.cardOK)
+			{
+				esp_send_2(false,"No SD card");
+				break;
+			}
+			//get filename
+			char filename[61];
+			memcpy(filename,esp_cmd.data,esp_cmd.length);
+			filename[esp_cmd.length] = 0;
+			if(card.removeFile(filename))
+			{
+				esp_send_2(true,"");
+			}
+			else
+			{
+				esp_send_2(true,"Could not delete File");
+			}
+			break;
+		}
+		case eOpenFile:
+		{
+			debug("File upload: ");
+			//check if we have a SD card
+			if(!card.cardOK)
+			{
+				esp_send_2(false,"No SD card");
+				break;
+			}
+			//check if we already have a file open
+			if(card.isFileOpen())
+			{
+				esp_send_2(false,"Upload in progress");
+				break;
+			}
+			
+			// get data
+			char filename[61];
+			memcpy(filename,esp_cmd.data,esp_cmd.length);
+			filename[esp_cmd.length] = 0;
+						
+			//create fitting short filename
+			String short_file = createShortFilename(filename);
+		
+			//open file
+			card.openFile((char*)short_file.c_str(),false,true);
+			if(card.isFileOpen())
+			{
+				esp_send_2(true,"");
+			}
+			else 
+			{
+				esp_send_2(false,"File open failed");
+			}
+			break;
+		}
+		case eCloseFile:
+		{
+			//check if we have a SD card
+			if(!card.cardOK)
+			{
+				esp_send_2(false,"No SD card");
+				break;
+			}
+			card.closefile();
+			esp_send_2(true,"");
+			break;
+		}
+		case eFileData:
+		{
+			//check if we have a SD card
+			if(!card.cardOK)
+			{
+				esp_send_2(false,"No SD card");
+				break;
+			}
+			//check if file is open
+			if(!card.isFileOpen())
+			{
+				esp_send_2(false,"No file open");
+				break;
+			}
+			
+			//write data
+			if(card.write((char*)esp_cmd.data,esp_cmd.length)) esp_send_2(true,"");
+			else esp_send_2(false,"write failed");
+					
+			break;
+		}
+		case eGetTemp:
+		{
+			esp_answer.cmd = eOk;
+			esp_answer.length = 24;
+			
+			float temp_f = degHotend(0);
+			memcpy(esp_answer.data,&temp_f,4);
+			temp_f = degTargetHotend(0);
+			memcpy(esp_answer.data+4,&temp_f,4);
+			#if EXTRUDERS > 1
+			temp_f = degHotend(1);
+			memcpy(esp_answer.data+8,&temp_f,4);
+			temp_f = degTargetHotend(1);
+			memcpy(esp_answer.data+12,&temp_f,4);
+			#else
+			temp_f = -100;
+			memcpy(esp_answer.data+8,&temp_f,4);
+			memcpy(esp_answer.data+12,&temp_f,4);
+			#endif
+			temp_f = degBed();
+			memcpy(esp_answer.data+16,&temp_f,4);
+			temp_f = degTargetBed();
+			memcpy(esp_answer.data+20,&temp_f,4);
+			
+			esp_send();
+			break;
+		}
+		case eGetPos:
+		{
+			esp_answer.cmd = eOk;
+			esp_answer.length = 12;
+			
+			memcpy(esp_answer.data,&current_position[X_AXIS],4);
+			memcpy(esp_answer.data+4,&current_position[Y_AXIS],4);
+			memcpy(esp_answer.data+8,&current_position[Z_AXIS],4);
+			
+			esp_send();
+			break;
+		}
+		case eGetNetworkChanged:
+		{
+			esp_answer.cmd = eOk;
+			esp_answer.length = 1;
+			esp_answer.data[0] = network_changed;
+			network_changed = false;
+			esp_send();
+			break;
+		}
+		case eGetNetworkSSID:
+		{
+			esp_answer.cmd = eOk;
+			esp_answer.length = strlen(new_ssid);
+			memcpy(esp_answer.data,new_ssid,esp_answer.length);
+			
+			esp_send();
+			break;
+		}
+		case eGetNetworkPWD:
+		{
+			esp_answer.cmd = eOk;
+			esp_answer.length = strlen(new_pwd);
+			memcpy(esp_answer.data,new_pwd,esp_answer.length);
+			
+			esp_send();
+			break;
+		}
+		case eGetNetworkMode:
+		{
+			esp_answer.cmd = eOk;
+			esp_answer.length = strlen(new_mode);
+			memcpy(esp_answer.data,new_mode,esp_answer.length);
+			
+			esp_send();
+			break;
+		}
+		case eGetNetworkSec:
+		{
+			esp_answer.cmd = eOk;
+			esp_answer.length = strlen(new_sec);
+			memcpy(esp_answer.data,new_sec,esp_answer.length);
+			
+			esp_send();
+			break;
+		}
+		case eSetNetworkSSID:
+		{
+			esp_cmd.data[esp_cmd.length] = 0;
+			snprintf(ssid,STORAGE_SIZE,"SSID: %s",esp_cmd.data);
+			esp_send_2(true,"");
+			break;
+		}
+		case eSetNetworkMode:
+		{
+			esp_cmd.data[esp_cmd.length] = 0;
+			snprintf(mode,STORAGE_SIZE,"MODE: %s",esp_cmd.data);
+			esp_send_2(true,"");
+			break;
+		}
+		case eSetNetworkIP:
+		{
+			esp_cmd.data[esp_cmd.length] = 0;
+			snprintf(address,STORAGE_SIZE,"%s",esp_cmd.data);
+			esp_send_2(true,"");
+			break;
+		}
+		case eGetPrintState:
+		{
+			esp_answer.cmd = eOk;
+			esp_answer.length = 6;
+			
+			// file open
+			unsigned char temp_c = card.isFileOpen();
+			memcpy(esp_answer.data,&temp_c,1);
+			// percentage
+			if (card.sdprinting) temp_c =card.percentDone();
+			else temp_c = 255;
+			memcpy(esp_answer.data+1,&temp_c,1);
+			//print time
+			unsigned long temp_l;
+			if(starttime != 0) 	temp_l = millis() - starttime;
+			else temp_l =0;
+			memcpy(esp_answer.data+2,&temp_l,4);
+			
+			esp_send();
+			break;
+		}
+		case eGetSDState:
+		{
+			esp_answer.cmd = eOk;
+			esp_answer.length =1;
+			esp_answer.data[0]= card.cardOK;
+			
+			esp_send();
+			break;
+		}
+		case eGetNumSDEntries:
+		{
+			if(!card.cardOK)
+			{
+				esp_send_2(false,"No SD card");
+				break;
+			}
+			
+			uint16_t fileCnt = card.getnrfilenames();
+			esp_answer.cmd = eOk;
+			esp_answer.length =2;
+			memcpy(esp_answer.data,&fileCnt,2);
+			
+			esp_send();
+			break;
+		}
+		case eGetSDEntry:
+		{
+			if(!card.cardOK)
+			{
+				esp_send_2(false,"No SD card");
+				break;
+			}
+			uint16_t file_index = 0;
+			memcpy(&file_index,esp_cmd.data,2);
+			
+			card.getfilename(file_index);
+			esp_answer.cmd = eOk;
+			esp_answer.length = strlen(card.filename);
+			memcpy(esp_answer.data,card.filename,esp_answer.length);
+			esp_send();
+
+			break;
+		}
+		default:
+			debug("Unknown command recieved from ESP");
+			break;
 	}
-	// UNKNOWN Command
-	else
+}
+
+unsigned char calc_crc(comm_package* pkt)
+{
+	unsigned char checksum = CRC_MAGIC;
+	checksum = checksum ^ pkt->cmd;
+	checksum = checksum ^ pkt->length;
+	
+	for(int i=0; i < pkt->length; i++)
 	{
-		MYSERIAL.print("Unknown cmd: ");
-		MYSERIAL.println(cmd);
+		checksum = checksum ^ pkt->data[i];
 	}
+	return checksum;
+}
+
+void esp_send_2(bool ok, char* data)
+{
+	if(ok) esp_answer.cmd = eOk;
+	else esp_answer.cmd = eError;
+	
+	esp_answer.length = strlen(data);
+	memcpy(esp_answer.data,data,esp_answer.length);	
+	
+	esp_send();
+}
+
+void esp_send()
+{
+	//calc checksum
+	esp_answer.checksum = calc_crc(&esp_answer);
+				
+	//send packet
+	wifi.write(esp_answer.cmd);
+	wifi.write(esp_answer.length);
+	for(int i=0;i < esp_answer.length; i++)
+	{
+		wifi.write(esp_answer.data[i]);
+	}
+	wifi.write(esp_answer.checksum);
 }
 
 void esp8266_load_cfg()
@@ -458,24 +742,28 @@ void esp8266_load_cfg()
 				
 			}
 			
-			// if we have a line, send to wifi module
+			// if we have a line, store in mem
 			if(linepos > 0)
 			{
 				if(strncmp(line_buffer,"SSID",4) ==0)
 				{
 					strcpy(new_ssid,line_buffer+5);
+					network_changed = true;
 				}
 				else if(strncmp(line_buffer,"MODE",4) ==0)
 				{
 					strcpy(new_mode,line_buffer+5);
+					network_changed = true;
 				}
 				else if(strncmp(line_buffer,"PWD",3) ==0)
 				{
 					strcpy(new_pwd,line_buffer+4);
+					network_changed = true;
 				}
 				else if(strncmp(line_buffer,"SEC",3) ==0)
 				{
 					strcpy(new_sec,line_buffer+4);
+					network_changed = true;
 				}
 			}			
 		}
@@ -583,67 +871,6 @@ void ESP8266_move(double x, double y, double z, double e,int f)
     #else
     plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], f*feedmultiply/60/100.0, active_extruder);
     #endif
-}
-
-bool searchResults(char *target, long timeout, int dbg)
-{
-  int c;
-  int index = 0;
-  int targetLength = strlen(target);
-  int count = 0;
-  char _data[255];
-  
-  memset(_data, 0, 255);
-
-  long _startMillis = millis();
-  do {
-    c = wifi.read();
-    
-    if (c >= 0) {
-
-      if (dbg > 0) {
-        if (count >= 254) {
-          debug(_data);
-          memset(_data, 0, 255);
-          count = 0;
-        }
-        _data[count] = c;
-        count++;
-      }
-
-      if (c != target[index])
-        index = 0;
-        
-      if (c == target[index]){
-        if(++index >= targetLength)
-		{
-          if (dbg > 1)  debug(_data);
-          return true;
-        }
-      }
-    }
-	
-	//manage other things while waiting
-    manage_heater();
-    manage_inactivity();
-    lcd_update();
-  } while(millis() - _startMillis < timeout);
-
-  if (dbg > 0) {
-    if (_data[0] == 0) {
-      debug("Failed: No data");
-    } else {
-      debug("Failed");
-      debug(_data);
-    }
-  }
-  return false;
-}
-
-
-void clearResults() 
-{
-   while(wifi.available() > 0) { wifi.read(); }
 }
 
 void debug(char *msg) 
