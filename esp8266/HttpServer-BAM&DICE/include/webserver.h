@@ -16,6 +16,7 @@ struct BAMState
 	String SDselected;
 	String SDpercent;
 	String printTime;
+	String fanSpeed;
 
 	bool SDinserted;
 	uint16_t numSDEntries;

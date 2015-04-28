@@ -84,6 +84,6 @@ void init()
 	}
 
 	// start cmd interface
-	cmdTimer.initializeMs(500, handle_ardunio).start();
+	cmdTimer.initializeMs(200, handle_ardunio).start();
 
 }

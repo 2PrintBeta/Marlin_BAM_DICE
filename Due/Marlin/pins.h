@@ -340,8 +340,8 @@
 #define Z_STEP_PIN         46
 #define Z_DIR_PIN          48
 #define Z_ENABLE_PIN       62
-#define Z_MIN_PIN          14//18
-#define Z_MAX_PIN          15//19
+#define Z_MIN_PIN          40
+#define Z_MAX_PIN          42
 
 #define E0_STEP_PIN        26
 #define E0_DIR_PIN         28
@@ -384,6 +384,12 @@
 #define S_SPI_MOSI_PIN       51
 #define S_SPI_MISO_PIN       50
 #define S_SPI_SCK_PIN        52
+
+//for ESP
+#define ESP_RESET_PIN   	67
+#define ESP_CH_DOWN_PIN 	44
+#define ESP_PROG_PIN		A5
+#define ESP_IO_PIN      	A14   
 
   #ifdef NUM_SERVOS
     #define SERVO0_PIN         11

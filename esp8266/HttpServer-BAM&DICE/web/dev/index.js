@@ -1,8 +1,8 @@
 ﻿  var xmlHttp = null;
   var refreshTimer = null;
-  var temp_data1;
   var temp_chart;
   var chart_created=false;
+  var config_changed=false;
   
   function createTempChart(temp1,temp1Target,temp2,temp2Target,temp3,temp3Target) 
   {
@@ -13,6 +13,7 @@
 	var ctx = document.getElementById("chart").getContext("2d");
 	
 	// only create 2 data series
+	var temp_data1;
 	if(temp2 == "--")
 	{
 		temp_data1 = {
@@ -256,16 +257,19 @@
 		//update chart 
 		updateTempChart(data.Temp1,data.Temp1Target,data.Temp2,data.Temp2Target,data.Bed,data.BedTarget);
 		
-		//update wifi config
-		document.getElementById("wifi_ssid").value = data.SSID;
-		if(data.MODE == "STATION") document.getElementById("wifi_mode").selectedIndex = 0;
-		else document.getElementById("wifi_mode").selectedIndex = 1;
+		//update wifi config if it was not changed by user
+		if(config_changed == false)
+		{
+			document.getElementById("wifi_ssid").value = data.SSID;
+			if(data.MODE == "STATION") document.getElementById("wifi_mode").selectedIndex = 0;
+			else document.getElementById("wifi_mode").selectedIndex = 1;
 		
-		if(data.SEC == "OPEN") document.getElementById("wifi_sec").selectedIndex = 0;
-		else if(data.SEC == "WEP") document.getElementById("wifi_sec").selectedIndex = 1;
-		else if(data.SEC == "WPA_PSK") document.getElementById("wifi_sec").selectedIndex = 2;
-		else if(data.SEC == "WPA2_PSK") document.getElementById("wifi_sec").selectedIndex = 3;
-		else if(data.SEC == "WPA_WPA2_PSK") document.getElementById("wifi_sec").selectedIndex = 4;
+			if(data.SEC == "OPEN") document.getElementById("wifi_sec").selectedIndex = 0;
+			else if(data.SEC == "WEP") document.getElementById("wifi_sec").selectedIndex = 1;
+			else if(data.SEC == "WPA_PSK") document.getElementById("wifi_sec").selectedIndex = 2;
+			else if(data.SEC == "WPA2_PSK") document.getElementById("wifi_sec").selectedIndex = 3;
+			else if(data.SEC == "WPA_WPA2_PSK") document.getElementById("wifi_sec").selectedIndex = 4;
+		}
 		
 		// update file list
 		if(data.SDinserted)
@@ -288,8 +292,10 @@
 			document.getElementById("FileDisplay").options.length = 1;
 			document.getElementById("FileDisplay2").options.length = 0;
 			document.getElementById("FileDisplay").options[0].text = "No SD card";
-			document.getElementById("FileDisplay2").options[0].text = "No SD card";
-		}		
+		}	
+
+		//fan speed
+		document.getElementById("fanSpeedVal").innerHTML = data.fanSpeed;
 	}
   }
   // set new target temperatures, updates temperature values 
@@ -307,8 +313,16 @@
 	xmlHttp.onreadystatechange = processRequest;
 	xmlHttp.open("GET", url, true);
 	xmlHttp.send( null );
+
+  }
+  function setFanSpeed()
+  {
+	var url = "/set?fan=" +  document.getElementById("fanSpeed").value;
+	xmlHttp = new XMLHttpRequest();
+	xmlHttp.onreadystatechange = processRequest;
+	xmlHttp.open("GET", url, true);
+	xmlHttp.send( null );
 	
-	getStatus();
   }
   // move any axis by an amount
   function move(amount,axis,speed)
@@ -370,8 +384,10 @@
 	 {
 		if(xmlHttp.status == 200)
 		{
+		   var data = JSON.parse(xmlHttp.responseText);
 		   document.getElementById("status").innerHTML = "";
 		   document.getElementById("status").className = "ok";
+		   document.getElementById("status_text").innerHTML = data.message;
 		   sleep(300);
 		   document.getElementById("status").className = "start";
 		}
@@ -402,13 +418,13 @@
 		return false;
 	return true;
   }
-  // update temperature every 5 seconds 
+  // update status every x seconds
   function autorefresh()
   {	
 	getStatus();
 	refreshTimer = setInterval(function () {getStatus()},3000);
   }
-		
+  // uploads a file
   function uploadFile()
   {
 	// unser File Objekt
@@ -440,38 +456,6 @@
 	
 	xmlHttp.open("POST", "/upload");
 	xmlHttp.send(formData);
-  }
-  function refreshSD()
-  {
-	var url = "/getLong?files=1";
-	xmlHttp = new XMLHttpRequest();
-	xmlHttp.onreadystatechange = refreshSDready;
-	xmlHttp.open("GET", url, true);
-	xmlHttp.send( null );
-  }
-  function refreshSDready()
-  {
-	processRequest();
-	if (xmlHttp.readyState == 4)
-	{
-		var data = JSON.parse(xmlHttp.responseText);
-		if(data.SD != "ok")
-		{
-			document.getElementById("FileDisplay").options.length = 1;
-			document.getElementById("FileDisplay").options[0].text = data.SD;
-			document.getElementById("FileDisplay2").options[0].text = data.SD;
-		}
-		else
-		{
-			document.getElementById("FileDisplay").options.length = data.Files.length;
-			document.getElementById("FileDisplay2").options.length = data.Files.length;
-			for (var i = 0; i < data.Files.length; i++) 
-			{
-				document.getElementById("FileDisplay").options[i].text = data.Files[i];
-				document.getElementById("FileDisplay2").options[i].text = data.Files[i];
-			}				
-		}
-	}
   }
   function deleteFile()
   {
@@ -540,4 +524,26 @@
 	xmlHttp = new XMLHttpRequest();
 	xmlHttp.open("GET", url, true);
 	xmlHttp.send( null );
+  }
+  function configChanged()
+  {
+	config_changed = true;
+  }
+  function saveConfig()
+  {
+	var url = "/set?network=";
+	url = url + document.getElementById("wifi_ssid").value;
+	url = url+ "&pwd=";
+	url = url + document.getElementById("wifi_pwd").value;
+	url = url+ "&mode=";
+	url = url+ document.getElementById("wifi_mode").options[document.getElementById("wifi_mode").selectedIndex].text;
+	url = url+ "&sec=";
+	url = url+ document.getElementById("wifi_sec").options[document.getElementById("wifi_sec").selectedIndex].text;
+	
+	xmlHttp = new XMLHttpRequest();
+	xmlHttp.onreadystatechange = processRequest;
+	xmlHttp.open("GET", url, true);
+	xmlHttp.send( null );
+	
+	config_changed = false;
   }

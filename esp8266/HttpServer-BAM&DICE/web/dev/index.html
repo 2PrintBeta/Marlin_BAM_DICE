@@ -12,14 +12,24 @@
    <body bgcolor="#5f5f5f">
    <h1> BAM&amp;DICE Controller </h1>
    <div id="main">
-      <div id="status" class="start"></div>
-		<div class="tabreiter">
-		<ul>
-			<!-- This is the Status Tab -->
-			<li>
-			<input type="radio" name="tabreiter-0" checked="checked" id="tabreiter-0-01" />
-			<label for="tabreiter-0-01">Status</label>
-            <div style="width:100%">
+	  <div id="status_area">
+		<div id="status" class="start"></div>
+		<div id="status_text" class="start">Not connected</div>
+	  </div>
+	  <div class="tabs-wrapper">
+		<input type="radio" name="tab" id="tab1" class="tab-head" checked="checked"/>
+		<label for="tab1">Status</label>
+		<input type="radio" name="tab" id="tab2" class="tab-head" />
+		<label for="tab2">Extruder</label>
+		<input type="radio" name="tab" id="tab3" class="tab-head" />
+		<label for="tab3">Axes</label>
+		<input type="radio" name="tab" id="tab4" class="tab-head" />
+		<label for="tab4">Files</label>
+		<input type="radio" name="tab" id="tab5" class="tab-head" />
+		<label for="tab5">Config</label>
+		<div class="tab-body-wrapper">
+			<div id="tab-body-1" class="tab-body">
+				<div style="width:100%">
 				<div id="statusarea">	
 				<div id="chart_display" style="margin: 0px auto; width: 400px;" class="showvalue">
 				<canvas id="chart" ></canvas>
@@ -45,14 +55,11 @@
 				</div>
 				
 				</div>
+				</div>
 			</div>
-			</li>
-			<!-- This is the Extruder Tab -->
-			<li>
-			<input type="radio" name="tabreiter-0" id="tabreiter-0-0" />
-			<label for="tabreiter-0-0">Extruder</label>
-            <div>
-				<div id="temparea">
+			<div id="tab-body-2" class="tab-body">
+			  <div>
+				<div id="temparea" class="showvalue">
 				<div class="temp-meter">
 				<strong>Hotend 1</strong>
 				<span class="glass">
@@ -105,17 +112,17 @@
 				<!-- Table with Extruder buttons -->
 				<table>
 					<tr>
-						<th> </th> <th class="label"> Amount </th> <th class="label"> Speed </th>
-					</tr>
-					<tr>
 						<td> 
 						<a href="#" onclick="extrude();" class="button"> <span>Extrude</span> </a>
 						</td> 
 						<td>
-						<input id="extrude_amount" value="5" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
+						<input id="extrude_amount" value="5" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue"> 
+						mm
 						</td>
 						<td>
+						with 
 						<input id="extrude_speed" value="30" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
+						mm/m
 						</td>
 					</tr>
 					<tr>
@@ -124,23 +131,41 @@
 						</td> 
 						<td>
 						<input id="retract_amount" value="5" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
+						mm
 						</td>
 						<td>
+						with
 						<input id="retract_speed" value="30" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
+						mm/m
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="#" onclick="setFanSpeed();" class="button"> <span>Set Fan</span> </a>
+						</td>
+						<td>
+						<input id="fanSpeed" value="0" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
+						</td>
+						<td>
+						Current Speed:
+						<div id="fanSpeedVal"> 0 </div>
 						</td>
 					</tr>
 				</table>
+				<table>
+					<tr>
+						
+					</tr>
+				</table>
 				</div>
+				<div style="clear:both"> </div>
 				</div>	
+			  </div>
 			</div>
-			</li>
-			<!-- This is the Axis Tab -->
-			<li>
-            <input type="radio" name="tabreiter-0" id="tabreiter-0-1" />
-			<label for="tabreiter-0-1">Axes</label>
-            <div>	 
+			<div id="tab-body-3" class="tab-body">
+			   <div>	 
 				<!-- Table with all move buttons -->
-				<table id="axisarea">
+				<table id="axisarea" class="showvalue">
 					<tr>
 						<td>
 						<input id="move_speed" value="300" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
@@ -232,13 +257,10 @@
 						</td>
 					</tr> 
 				</table>
+			  </div>
 			</div>
-			</li>
-			<!-- This is the Print Tab -->
-			<li>
-            <input type="radio" name="tabreiter-0" id="tabreiter-0-2" />
-			<label for="tabreiter-0-2">Files</label>
-			<div>
+			<div id="tab-body-4" class="tab-body">
+			  <div>
 				<div id="sdarea">
 				<table>
 					<colgroup> 
@@ -267,43 +289,39 @@
 					</tr>	
 				</table>
 				</div>
+			  </div>
 			</div>
-			</li>
-	
-		<!-- This is the configuration Tab -->
-			<li>
-			<input type="radio" name="tabreiter-0" id="tabreiter-0-3" />
-			<label for="tabreiter-0-3">Config</label>
-			<div>
-				<div id="configarea">
-				<form method="POST">
-				<table>
+			<div id="tab-body-5" class="tab-body">
+			  <div>
+				<div id="configarea" class="showvalue">
+				<form>
+				<table style="text-align: left;">
 					<tr>
 						<td class="label">
-						<label >Wifi Name:</label>
+						Wifi Name:
 						</td> <td>
-						<input type="text" id="wifi_ssid" class="showvalue" placeholder="Enter SSID" value="none">
+						<input type="text" id="wifi_ssid" class="showvalue" placeholder="Enter SSID" value="none" onchange="configChanged()">
 						</td>
 					</tr> <tr>
 						<td class="label">
-						<label>Wifi Password:</label>
+						Wifi Password:
 						</td> <td>
-						<input type="password" id="wifi_pwd" class="showvalue" placeholder="Password">
+						<input type="password" id="wifi_pwd" class="showvalue" placeholder="Password" onchange="configChanged()">
 						</td>
 					</tr><tr>
 						<td class="label">
-						<label>Wifi Mode:</label>
+						Wifi Mode:
 						</td><td>
-						<select id="wifi_mode" size="1" class="showvalue">
+						<select id="wifi_mode" size="1" class="showvalue" onchange="configChanged()">
 						<option value="yes">STATION</option>
 						<option value="no">ACCESSPOINT</option>
 						</select>  
 						</td>
 					</tr><tr>
 						<td class="label">
-						<label >Wifi Security:</label>
+						Wifi Security:
 						</td><td>
-						<select id="wifi_sec" size="1" class="showvalue">
+						<select id="wifi_sec" size="1" class="showvalue" onchange="configChanged()">
 						<option>OPEN</option>
 						<option>WEP</option>
 						<option>WPA_PSK</option>
@@ -313,15 +331,15 @@
 						</td>
 					</tr>
 				</table>
-				<button type="submit" class="button">Save</button>
+				<button type="button" class="button" onclick="saveConfig()">Save</button>
 				</form>
 				<br/>
 				<button type="button" class="button" onclick="reboot()">Reboot </button>
 				</div>
+			  </div>
 			</div>
-			</li>
-		</ul>
 		</div>
+	  </div>
    </div>
    </body>
 </html>

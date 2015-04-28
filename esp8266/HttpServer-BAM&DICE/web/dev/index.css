@@ -1,7 +1,6 @@
 html, body {
 	height:100%;
 	margin: 0;
-	overflow: scroll;
 }
 
 body {
@@ -18,7 +17,6 @@ body {
 	width: 90%;
 	border-radius: 30px;
 	margin: 0% 5% 0;
-	height: 90%;
 	padding: 0;
 }
 
@@ -160,112 +158,6 @@ body {
 	background-color: red;
 }
 
-.tabreiter
-{
-    width: 100%;
-}   
- 
-.tabreiter ul,
-.tabreiter li
-{
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
- 
-.tabreiter,
-.tabreiter input[type="radio"]:checked + label
-{
-    position: relative;
-}
- 
-.tabreiter li,
-.tabreiter input[type="radio"] + label
-{
-    display: inline-block;
-}
- 
-.tabreiter li > div,
-.tabreiter input[type="radio"]
-{
-    position: absolute;
-}
-  
-.tabreiter
-{
-    font-family: Arial, Sans-serif;
-	font-size: 1em;
-	font-weight: 400;
-    color: rgba(80, 80, 80, 1);
-	text-decoration: none;
-	font-size: 30px;
-	font-weight: bold;
-	background-color: #CCC;
-}
- 
-.tabreiter li
-{
-    vertical-align: top;
-}
- 
-.tabreiter li:first-child
-{
-    margin-left: 8px;
-}
- 
-.tabreiter li > div
-{
-    left: 0;
-    width: 100%;
-    padding: 8px;
-    overflow: auto;
-    -moz-box-sizing: border-box;
-    -webkit-box-sizing: border-box;
-    box-sizing: border-box;
-}
- 
-.tabreiter input[type="radio"] + label
-{
-    padding: 0 18px;
-    margin-top: 5px;
-    background: #f1f1f1;
-    text-align: center;
-    border-radius: 5px 5px 0 0;
-    cursor: pointer;
-    -moz-user-select: none;
-    -webkit-user-select: none;
-    user-select: none;
-}
- 
-.tabreiter input[type="radio"]:checked + label
-{
-    z-index: 1;
-    background: #fff;
-    border-bottom-color: #fff;
-    cursor: default;
-}
- 
-.tabreiter input[type="radio"]
-{
-    opacity: 0;
-}
- 
-.tabreiter input[type="radio"] ~ div
-{
-    display: none;
-}
- 
-.tabreiter input[type="radio"]:checked:not(:disabled) ~ div
-{
-    display: block;
-}
- 
-.tabreiter input[type="radio"]:disabled + label
-{
-    opacity: .5;
-    cursor: no-drop;
-}
-
 .showvalue { 
 	
 	position: relative;
@@ -293,6 +185,7 @@ body {
 	font-size: 25px;
 	box-shadow: inset 0px -2px 2px rgba(0, 0, 0, 0.3);
 	text-align: left;
+	color: #333;
 }
 
 .showvalue > span {
@@ -380,18 +273,20 @@ body {
 #temparea {
 	margin-left:auto;
 	margin-right:auto;
-	width:600px;
+	width:700px;
 	margin-top:10px;
 }
 #extrudearea
 {
 	margin-top:90px;
 	float:right;
+	margin-right:20px;
+	text-align: left;
 }
 #axisarea
 {
     margin-left: auto; 
-	margin-right: auto;"
+	margin-right: auto;
 }
 .temp-meter {
   margin-left: 30px;
@@ -441,6 +336,7 @@ body {
 	border-left: 0;
 	border-right: 0;
 	border-bottom: 0;
+	border-color: #000;
   }
 .temp-meter .total {
     font-size: 16px;
@@ -476,8 +372,62 @@ body {
     height: 30px;
     width: 20px;
     position: relative;
-      top: -65px;
-      right: -15px;
+    top: -65px;
+    right: -15px;
     z-index: 30;
   }
 
+/* Responsive tabs */  
+
+.tabs-wrapper {
+	margin:1% 10% 0 10%;
+}
+
+.tabs-wrapper label {
+	transition:background 0.4s ease-in-out, height 0.2s linear;
+	cursor:pointer;
+	color:#DBDBD3;
+	width:130px;
+	height:2em;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+	background:#525252;
+	text-align:center;
+	line-height:2em;
+	display:inline-block;
+	margin-bottom: 2px;
+	font-weight:bold;
+	font-size: 28px
+}
+
+.tabs-wrapper label:hover {
+	background:#9B9B93;
+}
+
+.tabs-wrapper label:checked {
+	background:#fff;
+}
+
+.tabs-wrapper label:last-of-type {
+	border-bottom:none;
+}
+
+.tabs-wrapper input[type=radio] {
+	display:none;
+}
+
+.tab-body {
+	position:absolute;
+	top:-9999px;
+	padding:10px;
+}
+
+.tab-body-wrapper {
+
+}
+
+#tab1:checked ~ .tab-body-wrapper #tab-body-1, #tab2:checked ~ .tab-body-wrapper #tab-body-2 , #tab3:checked ~ .tab-body-wrapper #tab-body-3 , #tab4:checked ~ .tab-body-wrapper  #tab-body-4, #tab5:checked ~ .tab-body-wrapper  #tab-body-5 {
+	position:relative;
+	top:0px;
+	
+}

@@ -32,13 +32,19 @@ void onFile(HttpRequest &request, HttpResponse &response)
 
 void onGet(HttpRequest &request, HttpResponse &response)
 {
-	if (request.getRequestMethod() == RequestMethod::GET)
+	JsonObjectStream* stream = new JsonObjectStream();
+	JsonObject& json = stream->getRoot();
+
+	if(!in_sync)
+	{
+		json["error"] = "1";
+		json["message"] = "Not connected";
+	}
+	else if (request.getRequestMethod() == RequestMethod::GET)
 	{
 		String query;
 		if(request.getQueryParameter("status").length() > 0)
 		{
-			JsonObjectStream* stream = new JsonObjectStream();
-			JsonObject& json = stream->getRoot();
 			json["Temp1"] = curState.temp1.c_str();
 			json["Temp1Target"] = curState.temp1Target.c_str();
 			json["Temp2"] = curState.temp2.c_str();
@@ -51,6 +57,7 @@ void onGet(HttpRequest &request, HttpResponse &response)
 			json["SDpercent"] = curState.SDpercent.c_str();
 			json["printTime"] = curState.printTime.c_str();
 			json["SDselected"] = curState.SDselected.c_str();
+			json["fanSpeed"] = curState.fanSpeed.c_str();
 
 			json["SDinserted"] = curState.SDinserted;
 			json["NumSDFiles"] = curState.numSDEntries;
@@ -65,23 +72,43 @@ void onGet(HttpRequest &request, HttpResponse &response)
 			json["MODE"] = ActiveConfig.mode.c_str();
 			json["SEC"] = ActiveConfig.security.c_str();
 
-			response.sendJsonObject(stream);
+			json["error"] = "0";
+			json["message"] = "Ok";
+
 
 		}
-		else response.forbidden();
+		else
+		{
+			json["error"] = "1";
+			json["message"] = "Unknown Request";
+		}
 	}
-	else response.forbidden();
+	else
+	{
+		json["error"] = "1";
+		json["message"] = "Unknown Request";
+	}
+
+	response.sendJsonObject(stream);
 }
 
 
 void onSet(HttpRequest &request, HttpResponse &response)
 {
+	JsonObjectStream* stream = new JsonObjectStream();
+	JsonObject& json = stream->getRoot();
+
 	if(uploadInProgress)
 	{
-		response.forbidden();
-		return;
+		json["error"] = "1";
+		json["message"] = "Upload in progress";
 	}
-	if (request.getRequestMethod() == RequestMethod::GET)
+	else if(!in_sync)
+	{
+		json["error"] = "1";
+		json["message"] = "Not connected";
+	}
+	else if (request.getRequestMethod() == RequestMethod::GET)
 	{
 		String query;
 		if(request.getQueryParameter("heater").length() > 0 &&
@@ -147,47 +174,80 @@ void onSet(HttpRequest &request, HttpResponse &response)
 			sendActiveCmd(eMove,20,data);
 
 		}
+		else if(request.getQueryParameter("network").length() > 0 )
+		{
+			ActiveConfig.NetworkSSID = request.getQueryParameter("network").c_str();
+			if(request.getQueryParameter("pwd") > 0) ActiveConfig.NetworkPassword = request.getQueryParameter("pwd");
+			ActiveConfig.mode = request.getQueryParameter("mode");
+			ActiveConfig.security = request.getQueryParameter("sec");
+			saveConfig(ActiveConfig);
+		}
+		else if(request.getQueryParameter("fan").length() > 0 )
+		{
+			unsigned char data = request.getQueryParameter("fan").toInt();
+			sendActiveCmd(eSetFan,1,&data);
+		}
+		else
+		{
+			json["error"] = "0";
+			json["message"] = "Unknown request";
+		}
+
 		//check answer
-		JsonObjectStream* stream = new JsonObjectStream();
-		JsonObject& json = stream->getRoot();
 		if(cmd_failed == false)
 		{
 			json["error"] = "0";
-			json["message"] = "ok";
+			json["message"] = "Ok";
 		}
 		else
 		{
 			json["error"] = "1";
 			json["message"] = cmd_error_str.c_str();
 		}
-		response.sendJsonObject(stream);
-
 	}
-	else response.forbidden();
+	else
+	{
+		json["error"] = "1";
+		json["message"] = "Unknown request";
+	}
+
+	response.sendJsonObject(stream);
 }
 
 void onUpload(HttpRequest &request, HttpResponse &response)
 {
+	JsonObjectStream* stream = new JsonObjectStream();
+	JsonObject& json = stream->getRoot();
+
 	if(uploadInProgress)
 	{
-		response.forbidden();
-		return;
+		json["error"] = "1";
+		json["message"] = "Upload in progress";
 	}
-	if (request.getRequestMethod() == RequestMethod::POST)
+	else if(!in_sync)
+	{
+		json["error"] = "1";
+		json["message"] = "Not connected";
+	}
+	else if (request.getRequestMethod() == RequestMethod::POST)
 	{
 		if(postError != "")
 		{
-			response.setContentType(ContentType::HTML);
-			response.sendString("Upload Failed.");
-			response.sendString(postError);
+			json["error"] = "1";
+			json["message"] = postError;
 		}
 		else
 		{
-			response.setContentType(ContentType::HTML);
-			response.sendString("Upload Ok.");
+			json["error"] = "0";
+			json["message"] = "Ok";
 		}
 	}
-	else response.forbidden();
+	else
+	{
+		json["error"] = "1";
+		json["message"] = "Unknown Request";
+	}
+	response.sendJsonObject(stream);
 }
 
 bool onPost(HttpRequest &request,pbuf* buf)
@@ -307,46 +367,45 @@ bool onPost(HttpRequest &request,pbuf* buf)
 		return false;
 }
 
-void onConfiguration(HttpRequest &request, HttpResponse &response)
+void onIndex(HttpRequest &request, HttpResponse &response)
 {
-	BAMConfig cfg = loadConfig();
-	if (request.getRequestMethod() == RequestMethod::POST)
-	{
-		// Update config
-		if (request.getPostParameter("SSID").length() > 0) // Network
-		{
-			cfg.NetworkSSID = request.getPostParameter("SSID");
-			if(request.getPostParameter("Password") > 0) cfg.NetworkPassword = request.getPostParameter("Password");
-			cfg.mode = request.getPostParameter("MODE");
-			cfg.security = request.getPostParameter("SECURITY");
-		}
-
-		saveConfig(cfg);
-		response.redirect();
-	}
-
 	response.setCache(86400, true); // It's important to use cache for better performance.
 	response.sendFile("index.html");
 }
 
 void onReboot(HttpRequest &request, HttpResponse &response)
 {
+	JsonObjectStream* stream = new JsonObjectStream();
+	JsonObject& json = stream->getRoot();
+
 	if(uploadInProgress)
 	{
-		response.forbidden();
-		return;
+		json["error"] = "1";
+		json["message"] = "Upload in progress";
 	}
-	if (request.getRequestMethod() == RequestMethod::GET)
+	else if(!in_sync)
+	{
+		json["error"] = "1";
+		json["message"] = "Not connected";
+	}
+	else if (request.getRequestMethod() == RequestMethod::GET)
 	{
 		if(request.getQueryParameter("reboot").length() > 0)
 		{
-			response.setContentType(ContentType::HTML);
-			response.sendString("Reboot Ok.");
+			json["error"] = "0";
+			json["message"] = "Ok";
+			response.sendJsonObject(stream);
+
 			System.restart();
 			return;
 		}
 	}
-	response.forbidden();
+	else
+	{
+		json["error"] = "1";
+		json["message"] = "Unknown Request";
+	}
+	response.sendJsonObject(stream);
 }
 
 void startWebServer()
@@ -363,6 +422,7 @@ void startWebServer()
 	curState.SDpercent = "---";
 	curState.SDselected = "no";
 	curState.printTime = "--:--";
+    curState.fanSpeed = "0";
 
 	curState.SDinserted = false;
 	curState.numSDEntries =0;
@@ -373,8 +433,8 @@ void startWebServer()
 	}
 
 	server.listen(80);
-	server.addPath("/", onConfiguration);
-	server.addPath("/index.html", onConfiguration);
+	server.addPath("/", onIndex);
+	server.addPath("/index.html", onIndex);
 	server.addPath("/upload", onUpload);
 	server.addPath("/get", onGet);
 	server.addPath("/set", onSet);

@@ -28,7 +28,7 @@
 #define wifi Serial1
 #define TIMEOUT 5000
 #define WIFI_BAUDRATE 1000000
-#define DEBUG 1
+#define DEBUG 0
 
 #define STORAGE_SIZE 50
 char address[STORAGE_SIZE] = {0};
@@ -55,6 +55,7 @@ enum ESP_CMDs
 	//commands
 	eSync=0,
 	eSetTemp,
+	eSetFan,
 	eMove,
 	eHome,
 	ePrint,
@@ -66,22 +67,17 @@ enum ESP_CMDs
 	eCloseFile,
 	eFileData,
 	
-	eGetTemp,
-	eGetPos,
-	eGetNetworkChanged,
 	eGetNetworkSSID,
 	eGetNetworkPWD,
 	eGetNetworkMode,
 	eGetNetworkSec,
-	eGetPrintState,
 	
-	eGetSDState,
 	eGetNumSDEntries,
 	eGetSDEntry,
 	
-	eSetNetworkSSID,
-	eSetNetworkMode,
-	eSetNetworkIP,
+	eSetNetworkSSID,  //this commands return the current state
+	eSetNetworkMode,  //this commands return the current state
+	eSetNetworkIP,   //this commands return the current state
 	
 	// answers
 	eOk,
@@ -89,6 +85,25 @@ enum ESP_CMDs
 	
 	//used for debug
 	eDebug,
+};
+
+struct S_STATE
+{
+	char networkChanged;
+	char fileOpen;
+	char sdPlugged;
+	char percentage;
+	unsigned long printtime;
+	float temp1;
+	float temp1Target;
+	float temp2;
+	float temp2Target;
+	float tempBed;
+	float tempBedTarget;
+	float x;
+	float y;
+	float z;
+	char fanSpeed;
 };
 
 struct comm_package
@@ -127,8 +142,7 @@ void handle_cmd();
 unsigned char calc_crc(comm_package* pkt);
 void esp_send_2(bool ok, char* data);
 void esp_send();
-
-
+void esp_send_state();
 //////////////////////////////////////////////////////////////////////
 /// Init stuff 
 ////////////////////////////////////////////////////////////////////
@@ -141,7 +155,14 @@ void init_esp8266()
 	strcpy(mode,"MODE: ");
 	strcpy(ssid,"SSID: ");
 
-	//TODO setup pins, reset esp
+	//setup pins, reset esp
+	pinMode(ESP_RESET_PIN,OUTPUT);
+	pinMode(ESP_CH_DOWN_PIN,OUTPUT);
+	pinMode(ESP_PROG_PIN,OUTPUT);
+	
+	digitalWrite(ESP_RESET_PIN,HIGH);
+	digitalWrite(ESP_CH_DOWN_PIN,HIGH);
+	digitalWrite(ESP_PROG_PIN,HIGH);
 	
 	// init wifi 
 	wifi.begin(WIFI_BAUDRATE);
@@ -237,7 +258,7 @@ void handle_cmd()
 		debug("Invalid CRC recieved from ESP");
 		return;
 	}
-	
+	/*
 	MYSERIAL.print("new cmd: ");
 	MYSERIAL.print((int)esp_cmd.cmd);
 	MYSERIAL.print(" ");
@@ -247,6 +268,7 @@ void handle_cmd()
 	MYSERIAL.print((char*)esp_cmd.data);
 	MYSERIAL.print(" ");
 	MYSERIAL.println((int)esp_cmd.checksum);	
+	*/
 	
 	//handle commands
 	switch(esp_cmd.cmd)
@@ -254,9 +276,10 @@ void handle_cmd()
 		case eDebug:
 		{
 			esp_cmd.data[esp_cmd.length] =0;
+			#if DEBUG > 0
 			MYSERIAL.print("dbg: ");
 			MYSERIAL.println((char*)esp_cmd.data);
-			
+			#endif
 			//no send !
 			break;
 		}
@@ -300,6 +323,16 @@ void handle_cmd()
 			esp_send_2(true,"");
 			break;
 		}
+		case eSetFan:
+		{
+			char speed = 0;
+			memcpy(&speed,esp_cmd.data,1);
+			
+			fanSpeed = speed;
+			//send answer
+			esp_send_2(true,"");
+			break;
+		}
 		case eMove:
 		{
 			float x,y,z,e,f;
@@ -308,18 +341,7 @@ void handle_cmd()
 			memcpy(&z,esp_cmd.data+8,4);
 			memcpy(&e,esp_cmd.data+12,4);
 			memcpy(&f,esp_cmd.data+16,4);
-			
-			MYSERIAL.print("move ");
-			MYSERIAL.print(x);
-			MYSERIAL.print(" ");
-			MYSERIAL.print(y);
-			MYSERIAL.print(" ");
-			MYSERIAL.print(z);
-			MYSERIAL.print(" ");
-			MYSERIAL.print(e);
-			MYSERIAL.print(" ");
-			MYSERIAL.println(f);
-			
+						
 			//execute move
 			ESP8266_move(x,y,z,e,f);
 			
@@ -330,8 +352,6 @@ void handle_cmd()
 		case eHome:
 		{
 			char axis = esp_cmd.data[0];
-			MYSERIAL.print("home ");
-			MYSERIAL.println((int)axis);
 			switch(axis)
 			{
 				case 0:
@@ -494,54 +514,6 @@ void handle_cmd()
 					
 			break;
 		}
-		case eGetTemp:
-		{
-			esp_answer.cmd = eOk;
-			esp_answer.length = 24;
-			
-			float temp_f = degHotend(0);
-			memcpy(esp_answer.data,&temp_f,4);
-			temp_f = degTargetHotend(0);
-			memcpy(esp_answer.data+4,&temp_f,4);
-			#if EXTRUDERS > 1
-			temp_f = degHotend(1);
-			memcpy(esp_answer.data+8,&temp_f,4);
-			temp_f = degTargetHotend(1);
-			memcpy(esp_answer.data+12,&temp_f,4);
-			#else
-			temp_f = -100;
-			memcpy(esp_answer.data+8,&temp_f,4);
-			memcpy(esp_answer.data+12,&temp_f,4);
-			#endif
-			temp_f = degBed();
-			memcpy(esp_answer.data+16,&temp_f,4);
-			temp_f = degTargetBed();
-			memcpy(esp_answer.data+20,&temp_f,4);
-			
-			esp_send();
-			break;
-		}
-		case eGetPos:
-		{
-			esp_answer.cmd = eOk;
-			esp_answer.length = 12;
-			
-			memcpy(esp_answer.data,&current_position[X_AXIS],4);
-			memcpy(esp_answer.data+4,&current_position[Y_AXIS],4);
-			memcpy(esp_answer.data+8,&current_position[Z_AXIS],4);
-			
-			esp_send();
-			break;
-		}
-		case eGetNetworkChanged:
-		{
-			esp_answer.cmd = eOk;
-			esp_answer.length = 1;
-			esp_answer.data[0] = network_changed;
-			network_changed = false;
-			esp_send();
-			break;
-		}
 		case eGetNetworkSSID:
 		{
 			esp_answer.cmd = eOk;
@@ -582,51 +554,24 @@ void handle_cmd()
 		{
 			esp_cmd.data[esp_cmd.length] = 0;
 			snprintf(ssid,STORAGE_SIZE,"SSID: %s",esp_cmd.data);
-			esp_send_2(true,"");
+			//send state
+			esp_send_state();
 			break;
 		}
 		case eSetNetworkMode:
 		{
 			esp_cmd.data[esp_cmd.length] = 0;
 			snprintf(mode,STORAGE_SIZE,"MODE: %s",esp_cmd.data);
-			esp_send_2(true,"");
+			//send state
+			esp_send_state();
 			break;
 		}
 		case eSetNetworkIP:
 		{
 			esp_cmd.data[esp_cmd.length] = 0;
 			snprintf(address,STORAGE_SIZE,"%s",esp_cmd.data);
-			esp_send_2(true,"");
-			break;
-		}
-		case eGetPrintState:
-		{
-			esp_answer.cmd = eOk;
-			esp_answer.length = 6;
-			
-			// file open
-			unsigned char temp_c = card.isFileOpen();
-			memcpy(esp_answer.data,&temp_c,1);
-			// percentage
-			if (card.sdprinting) temp_c =card.percentDone();
-			else temp_c = 255;
-			memcpy(esp_answer.data+1,&temp_c,1);
-			//print time
-			unsigned long temp_l;
-			if(starttime != 0) 	temp_l = millis() - starttime;
-			else temp_l =0;
-			memcpy(esp_answer.data+2,&temp_l,4);
-			
-			esp_send();
-			break;
-		}
-		case eGetSDState:
-		{
-			esp_answer.cmd = eOk;
-			esp_answer.length =1;
-			esp_answer.data[0]= card.cardOK;
-			
-			esp_send();
+			//send state
+			esp_send_state();
 			break;
 		}
 		case eGetNumSDEntries:
@@ -691,6 +636,47 @@ void esp_send_2(bool ok, char* data)
 	memcpy(esp_answer.data,data,esp_answer.length);	
 	
 	esp_send();
+}
+void esp_send_state()
+{
+	esp_answer.cmd = eOk;
+	esp_answer.length = sizeof(S_STATE);
+
+	S_STATE* state = (S_STATE*)esp_answer.data;
+	// if network changed
+	state->networkChanged = network_changed;
+	// if a file is opened
+	state->fileOpen = card.isFileOpen();
+	// print percentage
+	if (card.sdprinting) state->percentage =card.percentDone();
+	else state->percentage = 255;
+	//print time
+	if(starttime != 0) state->printtime = millis() - starttime;
+	else state->printtime =0;
+	//sd card inserted
+	state->sdPlugged = card.cardOK;
+	//fan speed
+	state->fanSpeed = fanSpeed;
+	//temperatures
+	state->temp1 = degHotend(0);
+	state->temp1Target = degTargetHotend(0);
+	#if EXTRUDERS > 1
+	state->temp2 = degHotend(1);
+	state->temp2Target = degTargetHotend(1);
+	#else
+	state->temp2 = -100.0;
+	state->temp2Target = -100.0;
+	#endif
+	state->tempBed = degBed();
+	state->tempBedTarget = degTargetBed();
+	// position
+	state->x = current_position[X_AXIS];
+	state->y = current_position[Y_AXIS];
+	state->z = current_position[Z_AXIS];
+	
+	//send
+	esp_send();
+	network_changed = false;
 }
 
 void esp_send()
