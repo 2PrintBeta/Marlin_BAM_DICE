@@ -461,12 +461,12 @@ const unsigned int dropsegments=5; //everything with less than this number of st
 	#define Y_IS_TMC
 	#define Y_MAX_CURRENT 1000  //in mA
 	#define Y_SENSE_RESISTOR 91 //in mOhms
-	#define Y_MICROSTEPS 16     //number of microsteps
+	#define Y_MICROSTEPS 128     //number of microsteps
 	
 //	#define Y2_IS_TMC
 	#define Y2_MAX_CURRENT 1000  //in mA
 	#define Y2_SENSE_RESISTOR 91 //in mOhms
-	#define Y2_MICROSTEPS 128     //number of microsteps	
+	#define Y2_MICROSTEPS 16     //number of microsteps	
 	
 //	#define Z_IS_TMC
 	#define Z_MAX_CURRENT 1000  //in mA

@@ -27,8 +27,8 @@
 
 #define wifi Serial1
 #define TIMEOUT 5000
-#define WIFI_BAUDRATE 1000000
-#define DEBUG 0
+#define WIFI_BAUDRATE 115200
+#define DEBUG 1
 
 #define STORAGE_SIZE 50
 char address[STORAGE_SIZE] = {0};

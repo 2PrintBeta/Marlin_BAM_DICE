@@ -48,7 +48,7 @@ void connectFail()
 
 void init()
 {
-	Serial.begin(1000000); // 115200 by default
+	Serial.begin(115200 );//begin(1000000); // 115200 by default
 	Serial.setTimeout(500);
 	Serial.systemDebugOutput(false); // Enable debug output to serial
 
