@@ -445,7 +445,7 @@ const unsigned int dropsegments=5; //everything with less than this number of st
  * you need to import the TMC26XStepper library into the arduino IDE for this
  ******************************************************************************/
 
-//#define HAVE_TMCDRIVER
+#define HAVE_TMCDRIVER
 #ifdef HAVE_TMCDRIVER
 
 //	#define X_IS_TMC
@@ -466,7 +466,7 @@ const unsigned int dropsegments=5; //everything with less than this number of st
 //	#define Y2_IS_TMC
 	#define Y2_MAX_CURRENT 1000  //in mA
 	#define Y2_SENSE_RESISTOR 91 //in mOhms
-	#define Y2_MICROSTEPS 16     //number of microsteps	
+	#define Y2_MICROSTEPS 128     //number of microsteps	
 	
 //	#define Z_IS_TMC
 	#define Z_MAX_CURRENT 1000  //in mA
@@ -505,11 +505,11 @@ const unsigned int dropsegments=5; //everything with less than this number of st
  * you need to import the L6470 library into the arduino IDE for this
  ******************************************************************************/
 
-//#define HAVE_L6470DRIVER
+#define HAVE_L6470DRIVER
 #ifdef HAVE_L6470DRIVER
 
-//	#define X_IS_L6470
-	#define X_MICROSTEPS 16     //number of microsteps
+	#define X_IS_L6470
+	#define X_MICROSTEPS 128     //number of microsteps
 	#define X_K_VAL 70          // 0 - 255, Higher values, are higher power. Be carefull not to go too high    
 	#define X_OVERCURRENT 2000  //maxc current in mA. If the current goes over this value, the driver will switch off
 	#define X_STALLCURRENT 1500 //current in mA where the driver will detect a stall
@@ -586,17 +586,10 @@ const unsigned int dropsegments=5; //everything with less than this number of st
 #endif
 /*********************************************************************************\
 * if you enable this option, the software tries to communicate with a ESP8266 module
-* Also change SERIAL_BUFFER_SIZE in Arduino\hardware\arduino\sam\cores\arduino\RingBuffer.h to 255 !
+* 
 **********************************************************************************/
 #define HAVE_ESP8266
-#ifdef HAVE_ESP8266
-	#define ESP_STATION 1  // act as a WLAN station
-	#define ESP_AP 2	   // act as a WLAN AP	 
-	#define ESP8266_MODE ESP_STATION  
-	#define ESP8266_SSID  "BETA-NET"  			// the ssid of the wlan to use
-	#define ESP8266_PWD   "8127969022774633"    //wlan key 
-    #define ESP8266_PORT  8080
-#endif
+
 //===========================================================================
 //=============================  Define Defines  ============================
 //===========================================================================
