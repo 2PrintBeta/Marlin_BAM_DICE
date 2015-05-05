@@ -11,7 +11,7 @@
 #include "NetUtils.h"
 #include "../Wiring/WString.h"
 #include "../Wiring/IPAddress.h"
-#include "Arduino.h"
+
 TcpConnection::TcpConnection(bool autoDestruct) : autoSelfDestruct(autoDestruct), sleep(0), canSend(true), timeOut(70)
 {
 	initialize(tcp_new());
@@ -26,7 +26,7 @@ TcpConnection::~TcpConnection()
 {
 	close();
 
-	debugf("~TCP connection time=%d",millis());
+	debugf("~TCP connection heap=%d",system_get_free_heap_size());
 }
 
 bool TcpConnection::connect(String server, int port)
@@ -216,6 +216,7 @@ int TcpConnection::write(IDataSourceStream* stream)
 
 void TcpConnection::close()
 {
+    //FIX DOMI
 	//close connection now !
 	closeTcpConnection(tcp);
 
@@ -238,7 +239,7 @@ void TcpConnection::initialize(tcp_pcb* pcb)
 	tcp_poll(tcp, staticOnPoll, 4);
 
 	#ifdef NETWORK_DEBUG
-	debugf("+TCP connection");
+	debugf("+TCP connection heap=%d",system_get_free_heap_size());
 	#endif
 }
 
@@ -246,7 +247,7 @@ void TcpConnection::closeTcpConnection(tcp_pcb *tpcb)
 {
 	if (tpcb == NULL) return;
 
-	debugf("-TCP connection time=%d",millis());
+	debugf("-TCP connection heap=%d",system_get_free_heap_size());
 
 	tcp_arg(tpcb, NULL);
 	tcp_sent(tpcb, NULL);

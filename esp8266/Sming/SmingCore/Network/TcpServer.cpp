@@ -7,7 +7,7 @@
 
 #include "TcpServer.h"
 #include "TcpClient.h"
-#include "Arduino.h"
+
 #include "../../SmingCore/Digital.h"
 #include "../../SmingCore/Timer.h"
 
@@ -82,7 +82,7 @@ err_t TcpServer::onAccept(tcp_pcb *clientTcp, err_t err)
 	}
 
 	#ifdef NETWORK_DEBUG
-	debugf("onAccept state: %d K=%d time=%d", err, totalConnections,millis());
+	debugf("onAccept state: %d K=%d", err, totalConnections);
 	list_mem();
 	#endif
 
@@ -102,7 +102,7 @@ err_t TcpServer::onAccept(tcp_pcb *clientTcp, err_t err)
 
 void TcpServer::onClient(TcpConnection *connection)
 {
-	debugf("Tcp Server onClient ") ; // %s",connection->getRemoteIp().toString().c_str());
+	debugf("Tcp Server onClient heap=%d",system_get_free_heap_size()) ; // %s",connection->getRemoteIp().toString().c_str());
 }
 
 err_t TcpServer::staticAccept(void *arg, tcp_pcb *new_tcp, err_t err)

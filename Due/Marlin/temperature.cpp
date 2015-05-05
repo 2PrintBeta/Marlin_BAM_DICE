@@ -758,6 +758,7 @@ void tp_init()
   #endif  
   #if defined(FAN_PIN) && (FAN_PIN > -1) 
     SET_OUTPUT(FAN_PIN);
+	WRITE(FAN_PIN,LOW);
     #ifdef FAST_PWM_FAN
     setPwmFrequency(FAN_PIN, 1); // No prescaling. Pwm frequency = F_CPU/256/8
     #endif
@@ -826,7 +827,7 @@ void tp_init()
 #elif defined(ARDUINO_ARCH_SAM)
 
   HAL_timer_start (TEMP_TIMER_NUM, 1000);
-  HAL_timer_enable_interrupt (TEMP_TIMER_NUM);
+//  HAL_timer_enable_interrupt (TEMP_TIMER_NUM);
 #endif
   
   // Wait for temperature measurement to settle

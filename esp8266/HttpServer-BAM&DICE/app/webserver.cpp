@@ -17,6 +17,7 @@ BAMState curState;
 
 void onFile(HttpRequest &request, HttpResponse &response)
 {
+
 	String file = request.getPath();
 	if (file[0] == '/')
 		file = file.substring(1);
@@ -45,26 +46,49 @@ void onGet(HttpRequest &request, HttpResponse &response)
 		String query;
 		if(request.getQueryParameter("status").length() > 0)
 		{
-			json["Temp1"] = curState.temp1.c_str();
-			json["Temp1Target"] = curState.temp1Target.c_str();
-			json["Temp2"] = curState.temp2.c_str();
-			json["Temp2Target"] = curState.temp2Target.c_str();
-			json["Bed"] = curState.tempBed.c_str();
-			json["BedTarget"] = curState.tempBedTarget.c_str();
-			json["xPos"] = curState.xPos.c_str();
-			json["yPos"] = curState.yPos.c_str();
-			json["zPos"] = curState.zPos.c_str();
-			json["SDpercent"] = curState.SDpercent.c_str();
-			json["printTime"] = curState.printTime.c_str();
-			json["SDselected"] = curState.SDselected.c_str();
-			json["fanSpeed"] = curState.fanSpeed.c_str();
-
-			json["SDinserted"] = curState.SDinserted;
-			json["NumSDFiles"] = curState.numSDEntries;
-			JsonArray& files = json.createNestedArray("Files");
-			for(int i = 0; i < curState.numSDEntries; i++)
+			json["Temp1"] = curState.temp1;
+			json["Temp1Target"] = curState.temp1Target;
+			if(curState.temp2 == -100)
 			{
-				files.add(curState.SDEntries[i].c_str());
+				json["Temp2"] = "--";
+				json["Temp2Target"] = "--";
+			}
+			else
+			{
+				json["Temp2"] = curState.temp2;
+				json["Temp2Target"] = curState.temp2Target;
+			}
+			json["Bed"] = curState.tempBed;
+			json["BedTarget"] = curState.tempBedTarget;
+			json["xPos"] = curState.xPos;
+			json["yPos"] = curState.yPos;
+			json["zPos"] = curState.zPos;
+			if(curState.SDpercent == 255)json["SDpercent"] = "---";
+			else json["SDpercent"] = curState.SDpercent;
+
+			json["printTime"] = curState.printTime;
+
+			if(curState.SDselected)json["SDselected"] = "yes";
+			else json["SDselected"] = "no" ;
+
+			json["fanSpeed"] = curState.fanSpeed;
+			json["SDinserted"] = curState.SDinserted;
+			if(curState.SDinserted)
+			{
+				json["NumSDFiles"] = curState.numSDEntries;
+				JsonArray& files = json.createNestedArray("Files");
+				for(int i = 0; i < curState.numSDEntries; i++)
+				{
+					files.add(curState.SDEntries[i]);
+				}
+			}
+			else
+			{
+				json["NumSDFiles"] = 0;
+				for(int i=0; i < MAX_FILENAMES; i++)
+				{
+					curState.SDEntries[i][0] = 0;
+				}
 			}
 
 			json["SSID"] = ActiveConfig.NetworkSSID.c_str();
@@ -74,8 +98,6 @@ void onGet(HttpRequest &request, HttpResponse &response)
 
 			json["error"] = "0";
 			json["message"] = "Ok";
-
-
 		}
 		else
 		{
@@ -410,26 +432,26 @@ void onReboot(HttpRequest &request, HttpResponse &response)
 
 void startWebServer()
 {
-	curState.temp1 = "0";
-	curState.temp1Target = "0";
-	curState.temp2 = "--";
-	curState.temp2Target = "--";
-	curState.tempBed = "0";
-	curState.tempBedTarget = "0";
-	curState.xPos ="0";
-	curState.yPos ="0";
-	curState.zPos ="0";
-	curState.SDpercent = "---";
-	curState.SDselected = "no";
-	curState.printTime = "--:--";
-    curState.fanSpeed = "0";
+	curState.temp1 = 0.0;
+	curState.temp1Target = 0.0;
+	curState.temp2 = -100.0;
+	curState.temp2Target = -100.0;
+	curState.tempBed =  0.0;
+	curState.tempBedTarget = 0.0;
+	curState.xPos = 0.0;
+	curState.yPos = 0.0;
+	curState.zPos = 0.0;
+	curState.SDpercent = 255;
+	curState.SDselected = false;
+	curState.printTime = 0;
+    curState.fanSpeed = 0;
 
 	curState.SDinserted = false;
 	curState.numSDEntries =0;
 
 	for(int i=0; i < MAX_FILENAMES; i++)
 	{
-		curState.SDEntries[i] = "";
+		curState.SDEntries[i][0] = 0;
 	}
 
 	server.listen(80);
@@ -446,7 +468,7 @@ void startWebServer()
 
 void startFTP()
 {
-	if (!fileExist("index.html"))
+	if (!fileExist("index.html") && !fileExist("index.html.gz"))
 		fileSetContent("index.html", "<h3>Please connect to FTP and upload files from folder 'web' (details in code)</h3>");
 
 	// Start FTP server

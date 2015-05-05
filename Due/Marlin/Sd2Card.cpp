@@ -151,6 +151,38 @@ static inline __attribute__((always_inline))
 
 //------------------------------------------------------------------------------
 #else  // SOFTWARE_SPI
+
+#if defined(ARDUINO_ARCH_SAM) // Arduino Due Board
+uint32_t int_old_sd=0;
+inline int disableAllButSerialInts()
+{
+	noInterrupts();
+	//store old ints
+	int_old_sd = NVIC->ISER[0];
+	// clear all ints
+	NVIC->ICER[0] = 0x1f; 
+	//set Serial int
+	NVIC->ISER[0] = (1 << ((uint32_t)(USART0_IRQn) & 0x1F)) | (1 << ((uint32_t)(USART1_IRQn) & 0x1F)) | (1 << ((uint32_t)(USART2_IRQn) & 0x1F));
+	//allow ints
+	interrupts();
+}
+inline int restoreInts()
+{
+	noInterrupts();
+	// clear all ints
+	NVIC->ICER[0] = 0x1f; 
+	//restore ints
+	NVIC->ISER[0] =int_old_sd;
+	//allow ints
+	interrupts();
+}
+#define DISABLE_INT disableAllButSerialInts
+#define ENABLE_INT restoreInts
+#else
+#define DISABLE_INT noInterrupts
+#define ENABLE_INT interrupts
+#endif
+
 //------------------------------------------------------------------------------
 /** nop to tune soft SPI timing */
 #define nop asm volatile ("nop\n\t")
@@ -160,7 +192,7 @@ static inline __attribute__((always_inline))
 static uint8_t spiRec() {
   uint8_t data = 0;
   // no interrupts during byte receive - about 8 us
-  cli();
+  DISABLE_INT();
   // output pin high - like sending 0XFF
  // Temporary replaced as there is no currently no fast IO on Arduino DUE
  // fastDigitalWrite(SPI_MOSI_PIN, HIGH);
@@ -183,7 +215,7 @@ static uint8_t spiRec() {
     digitalWriteDirect(SPI_SCK_PIN, LOW);
   }
   // enable interrupts
-  sei();
+  ENABLE_INT();
   return data;
 }
 //------------------------------------------------------------------------------
@@ -197,7 +229,7 @@ static void spiRead(uint8_t* buf, uint16_t nbyte) {
 /** Soft SPI send byte */
 static void spiSend(uint8_t data) {
   // no interrupts during byte send - about 8 us
-  cli();
+  DISABLE_INT();
   for (uint8_t i = 0; i < 8; i++) {
    // fastDigitalWrite(SPI_SCK_PIN, LOW);
      digitalWriteDirect(SPI_SCK_PIN, LOW);
@@ -219,7 +251,7 @@ static void spiSend(uint8_t data) {
  // fastDigitalWrite(SPI_SCK_PIN, LOW);
  digitalWrite(SPI_SCK_PIN, LOW);
   // enable interrupts
-  sei();
+  ENABLE_INT();
 }
 //------------------------------------------------------------------------------
 /** Soft SPI send block */

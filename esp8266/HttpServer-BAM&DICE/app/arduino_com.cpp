@@ -230,38 +230,19 @@ void handle_answer()
 			S_STATE* data = (S_STATE*) esp_answer.data;
 
 			//file selected
-			if(data->fileOpen) curState.SDselected ="yes";
-			else curState.SDselected ="no";
+			curState.SDselected = data->fileOpen;
 
 			//print percentage
-			if(data->percentage == 255)curState.SDpercent = "---";
-			else curState.SDpercent = (int)data->percentage;
+			curState.SDpercent = data->percentage;
 
 			//print time
-			data->printtime = data->printtime / 60000;
-			int hours = data->printtime / 60;
-			int minutes = data->printtime % 60;
-
-			curState.printTime = "";
-			if(hours < 10) curState.printTime.concat("0");
-			curState.printTime.concat(hours);
-			curState.printTime.concat(":");
-			if(minutes < 10) curState.printTime.concat("0");
-			curState.printTime.concat(minutes);
+			curState.printTime=data->printtime;
 
 			//temps
 			curState.temp1 = data->temp1;
 			curState.temp1Target = data->temp1Target;
-			if(data->temp2 == -100)
-			{
-				curState.temp2 = "--";
-				curState.temp2Target = "--";
-			}
-			else
-			{
-				curState.temp2 = data->temp2;
-				curState.temp2Target = data->temp2Target;
-			}
+			curState.temp2 = data->temp2;
+			curState.temp2Target = data->temp2Target;
 			curState.tempBed = data->tempBed;
 			curState.tempBedTarget = data->tempBedTarget;
 			//position
@@ -285,7 +266,7 @@ void handle_answer()
 			}
 
 			//fan Speed
-			curState.fanSpeed = (int)data->fanSpeed;
+			curState.fanSpeed = data->fanSpeed;
 			break;
 		}
 		case eGetNetworkSSID:
@@ -375,9 +356,12 @@ void handle_answer()
 			// only store max filenames
 			if(file_index > MAX_FILENAMES) break;
 
+			// ignore too long filenames
+			if(esp_answer.length > STORAGE_SIZE) break;
 			// Store data
-			esp_answer.data[esp_answer.length] =0;
-			curState.SDEntries[file_index] = (char*)esp_answer.data;
+			memcpy(curState.SDEntries[file_index],esp_answer.data,esp_answer.length);
+			curState.SDEntries[file_index][esp_answer.length] =0;
+
 			break;
 		}
 		case eDelete:

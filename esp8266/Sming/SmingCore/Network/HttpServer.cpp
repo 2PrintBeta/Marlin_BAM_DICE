@@ -70,7 +70,7 @@ bool HttpServer::processPost(HttpRequest &request,pbuf* buf)
 }
 
 bool HttpServer::process(HttpServerConnection &connection, HttpRequest &request, HttpResponse &response)
-{
+{	
 	String path = request.getPath();
 	if (path.length() > 1 && path.endsWith("/"))
 		path = path.substring(0, path.length() - 1);

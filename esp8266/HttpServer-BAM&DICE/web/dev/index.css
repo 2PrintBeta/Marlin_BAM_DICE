@@ -6,14 +6,14 @@ html, body {
 body {
 
 	text-align: center;
-	background-color: black;
+	background-color: rgb(174, 218, 236);
 	min-height: 100%;
-	color: white;
+	color: rgb(14, 41, 120);
 }
 
 
 #main {
-	background-color: #666;
+	background-color: rgb(68, 142, 215);
 	width: 90%;
 	border-radius: 30px;
 	margin: 0% 5% 0;
@@ -29,24 +29,27 @@ body {
 	margin-left: 30px;
 }
 
+#footer {
+
+}
 
 .movebutton {
     width:75px;
 	padding: 0px 2px;
 	display: inline-block;
 	border-style: outset;
-	color: rgba(100, 100, 100, 1);
+	color: #DBDBD3;
 	text-decoration: none;
 	border-radius: 10px;
 	text-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
 	font-size: 28px;
 	font-weight: bold;
-	background-color: #CCC;
+	background-color: rgb(14, 41, 120);
 	-moz-box-shadow: 0 10px rgba(0, 0, 0, 0.25);
 	box-shadow: 0 5px rgba(0, 0, 0, 0.25);
 	position: relative;
 	border-width: 2px;
-	border-color: #fff;
+	border-color: rgb(41, 128, 213);
 }
 
 .movebutton:active {
@@ -57,18 +60,18 @@ body {
 	padding: 0px 2px;
 	display: inline-block;
 	border-style: outset;
-	color: rgba(100, 100, 100, 1);
+	color: #DBDBD3;
 	text-decoration: none;
 	border-radius: 10px;
 	text-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
 	font-size: 28px;
 	font-weight: bold;
-	background-color: #CCC;
+	background-color: rgb(14, 41, 120);
 	-moz-box-shadow: 0 10px rgba(0, 0, 0, 0.25);
 	box-shadow: 0 5px rgba(0, 0, 0, 0.25);
 	position: relative;
 	border-width: 2px;
-	border-color: #fff;
+	border-color: rgb(41, 128, 213);
 	float:left;
 	width: 110px;
 }
@@ -82,18 +85,18 @@ body {
 	padding: 0px 2px;
 	display: inline-block;
 	border-style: outset;
-	color: rgba(100, 100, 100, 1);
+	color: #DBDBD3;
 	text-decoration: none;
 	border-radius: 10px;
 	text-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
 	font-size: 28px;
 	font-weight: bold;
-	background-color: #CCC;
+	background-color: rgb(14, 41, 120);
 	-moz-box-shadow: 0 10px rgba(0, 0, 0, 0.25);
 	box-shadow: 0 5px rgba(0, 0, 0, 0.25);
 	position: relative;
 	border-width: 2px;
-	border-color: #fff;
+	border-color: rgb(41, 128, 213);
 	vertical-align:middle;
 	margin-bottom: 5px;
 }
@@ -107,6 +110,9 @@ body {
 	border-style: inset;
 	border-width: 2px;
 	border-color: #fff;
+	border-radius: 10px;
+	font-size: 28px;
+	background-color: rgb(14, 41, 120);
 }
 
 #inl_label {
@@ -161,7 +167,7 @@ body {
 .showvalue { 
 	
 	position: relative;
-	background: #444;
+	background: rgb(40, 63, 194);
 	-moz-border-radius: 25px;
 	-webkit-border-radius: 25px;
 	border-radius: 25px;
@@ -209,7 +215,7 @@ body {
 
 .FileArea { 
 	position: relative;
-	background: #555;
+	background: rgb(14, 41, 120);
 	-moz-border-radius: 25px;
 	-webkit-border-radius: 25px;
 	border-radius: 25px;
@@ -223,7 +229,7 @@ body {
 
 .FileSelect { 
 	position: relative;
-	background: #555;
+	background: rgb(14, 41, 120);
 	-moz-border-radius: 25px;
 	-webkit-border-radius: 25px;
 	border-radius: 25px;
@@ -273,7 +279,7 @@ body {
 #temparea {
 	margin-left:auto;
 	margin-right:auto;
-	width:700px;
+	width:750px;
 	margin-top:10px;
 }
 #extrudearea
@@ -341,9 +347,9 @@ body {
 .temp-meter .total {
     font-size: 16px;
     position: absolute;
-    right: 2px;
+    right: -50px;
 	width: 40px;
-	color: #222;
+	color: #fff;
   }
 
 .bulb {
@@ -380,7 +386,7 @@ body {
 /* Responsive tabs */  
 
 .tabs-wrapper {
-	margin:1% 10% 0 10%;
+	margin:1% 0% 0 0%;
 }
 
 .tabs-wrapper label {
@@ -391,7 +397,7 @@ body {
 	height:2em;
     border-top-left-radius: 3px;
     border-top-right-radius: 3px;
-	background:#525252;
+	background:rgb(14, 41, 120);
 	text-align:center;
 	line-height:2em;
 	display:inline-block;
@@ -401,7 +407,7 @@ body {
 }
 
 .tabs-wrapper label:hover {
-	background:#9B9B93;
+	background:##AEDAEC;
 }
 
 .tabs-wrapper label:checked {

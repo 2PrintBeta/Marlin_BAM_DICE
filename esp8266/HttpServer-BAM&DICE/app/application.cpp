@@ -11,12 +11,18 @@ void sendAPmode()
 {
 	ActiveConfig.ip = WifiAccessPoint.getIP().toString();
 	ActiveConfig.mode = "AP";
+
+	// start cmd interface
+	cmdTimer.initializeMs(500, handle_ardunio).start();
 }
 
 void sendSTATIONmode()
 {
 	ActiveConfig.ip = WifiStation.getIP().toString();
 	ActiveConfig.mode = "STATION";
+
+	// start cmd interface
+	cmdTimer.initializeMs(500, handle_ardunio).start();
 }
 
 // Will be called when WiFi station was connected to AP
@@ -48,7 +54,8 @@ void connectFail()
 
 void init()
 {
-	Serial.begin(115200 );//begin(1000000); // 115200 by default
+	//WDT.enable(true);
+	Serial.begin(1000000);//begin(1000000); // 115200 by default
 	Serial.setTimeout(500);
 	Serial.systemDebugOutput(false); // Enable debug output to serial
 
@@ -82,8 +89,4 @@ void init()
 
 		System.onReady(sendAPmode);
 	}
-
-	// start cmd interface
-	cmdTimer.initializeMs(200, handle_ardunio).start();
-
 }

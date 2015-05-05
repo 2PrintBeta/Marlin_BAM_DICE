@@ -226,8 +226,15 @@
 		document.getElementById("cur_position").innerHTML = "X "+data.xPos+" Y "+data.yPos+" Z "+data.zPos;
 		// print percentage
 		document.getElementById("cur_progress").innerHTML =  data.SDpercent+" %";
-		// print time			
-		document.getElementById("cur_time").innerHTML = data.printTime+" h";
+		// print time		
+		var time =  data.printTime/ 60000;
+		var hours = time / 60;
+		var minutes = time % 60;
+		document.getElementById("cur_time").innerHTML = "";
+ 		if(hours < 10) document.getElementById("cur_time").innerHTML += "0"; 
+		document.getElementById("cur_time").innerHTML += Math.floor(hours) + ":"; 
+		if(minutes < 10) document.getElementById("cur_time").innerHTML += "0";
+		document.getElementById("cur_time").innerHTML += Math.floor(minutes) + " h"; 
 		if(data.SDselected == "yes")
 		{
 			if(data.SDpercent != "---")
@@ -444,7 +451,8 @@
 	xmlHttp.onreadystatechange = function(e) {
 		if(xmlHttp.readyState == 4)
 		{
-			alert(xmlHttp.responseText);
+			var data = JSON.parse(xmlHttp.responseText);
+			document.getElementById("status_text").innerHTML = data.message;
 		}
 	};
 	

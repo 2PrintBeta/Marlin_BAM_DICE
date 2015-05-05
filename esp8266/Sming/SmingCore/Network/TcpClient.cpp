@@ -11,12 +11,12 @@
 #include "../../Wiring/WString.h"
 
 TcpClient::TcpClient(tcp_pcb *clientTcp, TcpClientDataCallback clientReceive, bool autoDestruct )
-: TcpConnection(clientTcp, autoDestruct), state(eTCS_Ready), asyncTotalSent(0), asyncTotalLen(0)
+: TcpConnection(clientTcp, autoDestruct), state(eTCS_Connected), asyncTotalSent(0), asyncTotalLen(0)
 {
 	completed = NULL;
 	ready = NULL;
 	receive = clientReceive;
-	debugf("TcpClient instantiated");
+	stream = NULL;
 }
 
 TcpClient::TcpClient(bool autoDestruct)
@@ -137,6 +137,7 @@ err_t TcpClient::onReceive(pbuf *buf)
 				delete[] data;
 				return ERR_MEM;
 			}
+
 			delete[] data;
 		}
 

@@ -201,22 +201,27 @@ static const tTimerConfig TimerConfig [NUM_HARDWARE_TIMERS] =
 
 void HAL_timer_start (uint8_t timer_num, uint32_t frequency)
 {
+
 	Tc *tc = TimerConfig [timer_num].pTimerRegs;
 	IRQn_Type irq = TimerConfig [timer_num].IRQ_Id;
 	uint32_t channel = TimerConfig [timer_num].channel;
 
 	pmc_set_writeprotect(false);
 	pmc_enable_periph_clk((uint32_t)irq);
-	TC_Configure (tc, channel, TC_CMR_WAVE | TC_CMR_WAVSEL_UP_RC | TC_CMR_TCCLKS_TIMER_CLOCK3);
+	
+	NVIC_SetPriorityGrouping(4);
+	
+	NVIC_SetPriority(irq, NVIC_EncodePriority(4, 6, 0));
+	
+	TC_Configure (tc, channel, TC_CMR_CPCTRG | TC_CMR_TCCLKS_TIMER_CLOCK4);
+  tc->TC_CHANNEL[channel].TC_IER |= TC_IER_CPCS; //enable interrupt on timer match with register C
 
-	uint32_t rc = VARIANT_MCK/32/frequency;
-
-	TC_SetRC(tc, channel, rc);
-
+	tc->TC_CHANNEL[channel].TC_RC   = (VARIANT_MCK >> 7) / 2000;
 	TC_Start(tc, channel);
 
-	// enable interrupt on RC compare
-	tc->TC_CHANNEL[channel].TC_IER=TC_IER_CPCS;
+	//enable interrupt on RC compare
+	//tc->TC_CHANNEL[channel].TC_IER = TC_IER_CPCS;
+	//tc->TC_CHANNEL[channel].TC_IDR = ~TC_IER_CPCS;
 
 	NVIC_EnableIRQ(irq);
 }

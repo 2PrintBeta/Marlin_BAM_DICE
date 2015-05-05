@@ -2,25 +2,27 @@
 #define INCLUDE_WEBSERVER_H_
 
 #define MAX_FILENAMES 50
+#define STORAGE_SIZE 15
+
 struct BAMState
 {
-	String temp1;
-	String temp1Target;
-	String temp2;
-	String temp2Target;
-	String tempBed;
-	String tempBedTarget;
-	String xPos;
-	String yPos;
-	String zPos;
-	String SDselected;
-	String SDpercent;
-	String printTime;
-	String fanSpeed;
+	float temp1;
+	float temp1Target;
+	float temp2;
+	float temp2Target;
+	float tempBed;
+	float tempBedTarget;
+	float xPos;
+	float yPos;
+	float zPos;
+	bool SDselected;
+	int SDpercent;
+	unsigned long printTime;
+	int fanSpeed;
 
 	bool SDinserted;
 	uint16_t numSDEntries;
-	String SDEntries[MAX_FILENAMES];
+	char SDEntries[MAX_FILENAMES][STORAGE_SIZE];
 };
 
 extern BAMState curState;

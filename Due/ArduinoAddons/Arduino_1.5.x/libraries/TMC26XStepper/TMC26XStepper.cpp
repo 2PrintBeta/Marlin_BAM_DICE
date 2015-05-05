@@ -43,10 +43,37 @@ inline void digitalWriteDirect(int pin, boolean val){
 inline int digitalReadDirect(int pin){
   return !!(g_APinDescription[pin].pPort -> PIO_PDSR & g_APinDescription[pin].ulPin);
 }
+uint32_t int_old_tmc=0;
+inline int disableAllButSerialInts()
+{
+	noInterrupts();
+	//store old ints
+	int_old_tmc = NVIC->ISER[0];
+	// clear all ints
+	NVIC->ICER[0] = 0x1f; 
+	//set Serial int
+	NVIC->ISER[0] = (1 << ((uint32_t)(USART0_IRQn) & 0x1F)) | (1 << ((uint32_t)(USART1_IRQn) & 0x1F)) | (1 << ((uint32_t)(USART2_IRQn) & 0x1F));
+	//allow ints
+	interrupts();
+}
+inline int restoreInts()
+{
+	noInterrupts();
+	// clear all ints
+	NVIC->ICER[0] = 0x1f; 
+	//restore ints
+	NVIC->ISER[0] =int_old_tmc;
+	//allow ints
+	interrupts();
+}
+#define DISABLE_INT disableAllButSerialInts
+#define ENABLE_INT restoreInts
 #else
 #warning No fast IOs for this platform
 inline void digitalWriteDirect(int pin, boolean val){ digitalWrite(pin,val)}
 inline int digitalReadDirect(int pin){ return digitalRead(pin);}
+#define DISABLE_INT noInterrupts
+#define ENABLE_INT interrupts
 #endif
 
 
@@ -1075,8 +1102,8 @@ inline void TMC26XStepper::send262(unsigned long datagram) {
 	else
 	{
 	    // no interrupts during byte receive - about 8 us
-       noInterrupts();
-	 	   //write/read the values
+       DISABLE_INT();
+	    //write/read the values
 	   i_datagram = SoftSPI_Transfer((datagram >> 16) & 0xff);
 	   i_datagram <<= 8;
 	   i_datagram |= SoftSPI_Transfer((datagram >>  8) & 0xff);
@@ -1084,7 +1111,7 @@ inline void TMC26XStepper::send262(unsigned long datagram) {
 	   i_datagram |= SoftSPI_Transfer((datagram) & 0xff);
 	   i_datagram >>= 4;
        // enable interrupts
-       interrupts();
+       ENABLE_INT();
 	}
 	
 #ifdef DEBUG

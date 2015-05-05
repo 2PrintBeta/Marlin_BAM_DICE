@@ -10,7 +10,11 @@
    </head>
   
    <body bgcolor="#5f5f5f">
-   <h1> BAM&amp;DICE Controller </h1>
+   <table style="margin-left: auto; margin-right: auto;">
+	<tr>
+		<td><img src="logo.gif" alt="logo"> </td> <td> <h1> WIFI Controller </h1></td>
+	</tr>
+   </table>    
    <div id="main">
 	  <div id="status_area">
 		<div id="status" class="start"></div>
@@ -295,21 +299,21 @@
 			  <div>
 				<div id="configarea" class="showvalue">
 				<form>
-				<table style="text-align: left;">
+				<table style="text-align: left; margin-left: auto; margin-right: auto;">
 					<tr>
-						<td class="label">
+						<td class="movelabel">
 						Wifi Name:
 						</td> <td>
 						<input type="text" id="wifi_ssid" class="showvalue" placeholder="Enter SSID" value="none" onchange="configChanged()">
 						</td>
 					</tr> <tr>
-						<td class="label">
+						<td class="movelabel">
 						Wifi Password:
 						</td> <td>
 						<input type="password" id="wifi_pwd" class="showvalue" placeholder="Password" onchange="configChanged()">
 						</td>
 					</tr><tr>
-						<td class="label">
+						<td class="movelabel">
 						Wifi Mode:
 						</td><td>
 						<select id="wifi_mode" size="1" class="showvalue" onchange="configChanged()">
@@ -318,7 +322,7 @@
 						</select>  
 						</td>
 					</tr><tr>
-						<td class="label">
+						<td class="movelabel">
 						Wifi Security:
 						</td><td>
 						<select id="wifi_sec" size="1" class="showvalue" onchange="configChanged()">
@@ -340,6 +344,9 @@
 			</div>
 		</div>
 	  </div>
+   </div>
+   <div id="footer"> 
+   Powered by 2PrintBeta
    </div>
    </body>
 </html>
