@@ -143,6 +143,7 @@ unsigned char calc_crc(comm_package* pkt);
 void esp_send_2(bool ok, char* data);
 void esp_send();
 void esp_send_state();
+void wifi_write(const uint8_t c);
 //////////////////////////////////////////////////////////////////////
 /// Init stuff 
 ////////////////////////////////////////////////////////////////////
@@ -693,6 +694,23 @@ void esp_send()
 	}
 	wifi.write(esp_answer.checksum);
 }
+
+void wifi_write(const uint8_t c)
+{
+	//TODO find out why normal, buffered send do not work correctly
+	
+	//workaround send uart data to ESP8266 directly without buffering
+	// Check if the transmitter is ready
+	while ((USART0->US_CSR & US_CSR_TXRDY) != US_CSR_TXRDY)
+    ;
+
+	// Send character
+	USART0->US_THR = c ;
+}
+
+////////////////////////////////////////////////////////////
+// Load config file, store in buffers for sending on request
+/////////////////////////////////////////////////////////////
 
 void esp8266_load_cfg()
 {
