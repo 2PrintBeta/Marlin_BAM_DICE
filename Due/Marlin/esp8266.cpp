@@ -251,7 +251,7 @@ void handle_esp8266()
 
 void handle_cmd()
 {
-
+/*
 	MYSERIAL.print("new cmd: ");
 	MYSERIAL.print((int)esp_cmd.cmd);
 	MYSERIAL.print(" ");
@@ -261,7 +261,7 @@ void handle_cmd()
 	MYSERIAL.print((char*)esp_cmd.data);
 	MYSERIAL.print(" ");
 	MYSERIAL.println((int)esp_cmd.checksum);	
-
+*/
 	//check checksum
 	unsigned char checksum = calc_crc(&esp_cmd);
 	if(esp_cmd.checksum != checksum)

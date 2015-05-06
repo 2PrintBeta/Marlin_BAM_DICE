@@ -281,17 +281,23 @@
 		// update file list
 		if(data.SDinserted)
 		{
-			document.getElementById("FileDisplay").options.length = data.Files.length;
-			document.getElementById("FileDisplay2").options.length = data.Files.length;
-			var numF = 0;
+			// build array of files to display
+			var files =new Array();
 			for (var i = 0; i < data.Files.length; i++) 
 			{
 				if(data.Files[i].indexOf('.') != -1)
 				{
-					document.getElementById("FileDisplay").options[numF].text = data.Files[i];
-					document.getElementById("FileDisplay2").options[numF].text = data.Files[i];
-					numF++;
+					files.push(data.Files[i]);
 				}
+			}	
+			
+			document.getElementById("FileDisplay").options.length = files.length;
+			document.getElementById("FileDisplay2").options.length = files.length;
+			
+			for (var i = 0; i < files.length; i++) 
+			{
+				document.getElementById("FileDisplay").options[i].text = files[i];
+				document.getElementById("FileDisplay2").options[i].text = files[i];
 			}				
 		}
 		else
@@ -472,19 +478,11 @@
 		alert("No file selected");
 		return;
 	}
-	var url = "/set?delete=" + document.getElementById("FileDisplay").options[document.getElementById("FileDisplay").selectedIndex].text;
+	var url = "/set?delete=" + encodeURIComponent(document.getElementById("FileDisplay").options[document.getElementById("FileDisplay").selectedIndex].text);
 	xmlHttp = new XMLHttpRequest();
-	xmlHttp.onreadystatechange = deleteFileReady;
+	xmlHttp.onreadystatechange = processRequest;
 	xmlHttp.open("GET", url, true);
 	xmlHttp.send( null );
-  }
-  function deleteFileReady()
-  {
-	processRequest();
-	if (xmlHttp.readyState == 4)
-	{
-		refreshSD();
-	}
   }
   function printFile()
   {
@@ -494,7 +492,7 @@
 		return;
 	}
 	
-	var url = "/set?print=" + document.getElementById("FileDisplay2").options[document.getElementById("FileDisplay2").selectedIndex].text;
+	var url = "/set?print=" + encodeURIComponent(document.getElementById("FileDisplay2").options[document.getElementById("FileDisplay2").selectedIndex].text);
 	xmlHttp = new XMLHttpRequest();
 	xmlHttp.onreadystatechange = processRequest;
 	xmlHttp.open("GET", url, true);
