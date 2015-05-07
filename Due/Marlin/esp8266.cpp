@@ -28,7 +28,7 @@
 #define wifi Serial1
 #define TIMEOUT 5000
 #define WIFI_BAUDRATE 1000000
-#define DEBUG 0
+#define DEBUG 1
 
 #define STORAGE_SIZE 50
 char address[STORAGE_SIZE] = {0};
@@ -686,13 +686,13 @@ void esp_send()
 	esp_answer.checksum = calc_crc(&esp_answer);
 				
 	//send packet
-	wifi.write(esp_answer.cmd);
-	wifi.write(esp_answer.length);
+	wifi_write(esp_answer.cmd);
+	wifi_write(esp_answer.length);
 	for(int i=0;i < esp_answer.length; i++)
 	{
-		wifi.write(esp_answer.data[i]);
+		wifi_write(esp_answer.data[i]);
 	}
-	wifi.write(esp_answer.checksum);
+	wifi_write(esp_answer.checksum);
 }
 
 void wifi_write(const uint8_t c)
@@ -700,12 +700,16 @@ void wifi_write(const uint8_t c)
 	//TODO find out why normal, buffered send do not work correctly
 	
 	//workaround send uart data to ESP8266 directly without buffering
-	// Check if the transmitter is ready
-	while ((USART0->US_CSR & US_CSR_TXRDY) != US_CSR_TXRDY)
-    ;
+	Uart* _pUart =(Uart*) USART0;
+        // Check if the transmitter is ready
+  
+	while ((_pUart->UART_SR & UART_SR_TXRDY) != UART_SR_TXRDY) 
+        {
+         
+        }
 
 	// Send character
-	USART0->US_THR = c ;
+	 _pUart->UART_THR = c;
 }
 
 ////////////////////////////////////////////////////////////
