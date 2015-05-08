@@ -6,7 +6,7 @@
  ****/
 
 #include "HttpClient.h"
-
+#include "URL.h"
 #include "../SmingCore.h"
 
 HttpClient::HttpClient(bool autoDestruct /* = false */) : TcpClient(autoDestruct)

@@ -33,14 +33,14 @@ EXTRA_INCDIR    = include $(SMF) $(SMF)system/include $(SMF)Wiring $(SMF)Librari
 
 # libraries used in this project, mainly provided by the SDK
 USER_LIBDIR = $(SMF)compiler/lib
-LIBS		= microc gcc hal phy pp net80211 openlwip wpa main
+LIBS		= microc microgcc hal phy pp net80211 openlwip wpa main
 
 # compiler flags using during compilation of source files
-CFLAGS		= -Os -g -O2 -Wpointer-arith -Wundef -Werror -Wl,-EL -fno-inline-functions -nostdlib -mlongcalls -mtext-section-literals -D__ets__ -DICACHE_FLASH -D ARDUINO=106
+CFLAGS		= -Os -Wpointer-arith -Wundef -Werror -Wl,-EL -nostdlib -mlongcalls -mtext-section-literals -finline-functions -fdata-sections -ffunction-sections -D__ets__ -DICACHE_FLASH -D ARDUINO=106
 CXXFLAGS	= $(CFLAGS) -fno-rtti -fno-exceptions -std=c++11
 
 # linker flags used to generate the main object file
-LDFLAGS		= -nostdlib -Wl,--no-check-sections -u call_user_start -Wl,-static
+LDFLAGS		= -nostdlib -u call_user_start -Wl,-static -Wl,--gc-sections
 
 # linker script used for the above linkier step
 LD_PATH     = $(SMF)compiler/ld/

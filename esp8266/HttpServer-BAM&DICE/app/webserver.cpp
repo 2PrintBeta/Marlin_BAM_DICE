@@ -7,6 +7,65 @@
 HttpServer server;
 FTPServer ftp;
 
+const char* defaultContent = "<!DOCTYPE html> \
+<html> \
+   <head> \
+      <meta charset=\"UTF-8\"> \
+      <title>BAM&amp;DICE Control </title> \
+	  <script>  \
+      function reboot() \
+       { \
+     	var url = \"/setinternal?reboot=1\"; \
+     	xmlHttp = new XMLHttpRequest(); \
+     	xmlHttp.open(\"GET\", url, true); \
+     	xmlHttp.send( null ); \
+       } \
+       function saveConfig() \
+       { \
+     	var url = \"/setinternal?network=\"; \
+     	url = url + document.getElementById(\"wifi_ssid\").value; \
+     	url = url+ \"&pwd=\"; \
+     	url = url + document.getElementById(\"wifi_pwd\").value; \
+     	url = url+ \"&mode=\"; \
+     	url = url+ document.getElementById(\"wifi_mode\").options[document.getElementById(\"wifi_mode\").selectedIndex].text; \
+     	url = url+ \"&sec=\"; \
+     	url = url+ document.getElementById(\"wifi_sec\").options[document.getElementById(\"wifi_sec\").selectedIndex].text; \
+     	xmlHttp = new XMLHttpRequest(); \
+     	xmlHttp.open(\"GET\", url, true); \
+     	xmlHttp.send( null ); \
+       } \
+      </script> \
+   </head> \
+   <body> \
+   <h3> No html files found. </h3> \
+	Configure this device for internet accesss, and it will download them  \
+   <form> \
+   <table> \
+   <tr> <td> Wifi name </td> \
+        <td> <input type=\"text\" id=\"wifi_ssid\" placeholder=\"Enter SSID\" value=\"none\"> </td> \
+   </tr> <tr> \
+   <td> Wifi password </td> \
+     <td> <input type=\"password\" id=\"wifi_pwd\" placeholder=\"Password\"> </td> \
+   </tr><tr> \
+   <td> Wifi mode </td> \
+     	<td> <select id=\"wifi_mode\" size=\"1\" > <option value=\"yes\">STATION</option> <option value=\"no\">ACCESSPOINT</option> </select> </td> \
+   </tr><tr> \
+   <td> Wifi security </td> \
+     	<td> <select id=\"wifi_sec\" size=\"1\"> \
+			<option>OPEN</option> \
+		    <option>WEP</option> \
+			<option>WPA_PSK</option> \
+			<option>WPA2_PSK</option> \
+		    <option>WPA_WPA2_PSK</option> \
+		</select> </td> \
+   </tr> </table> \
+   <button type=\"button\" onclick=\"saveConfig()\">Save</button> \
+   </form> <br/> \
+   <button type=\"button\" onclick=\"reboot()\">Reboot </button> \
+   </body> \
+</html>";
+
+
 int postState=0;
 int postDataProcessed =0;
 String boundary;
@@ -14,6 +73,37 @@ String postError;
 
 bool uploadInProgress = false;
 BAMState curState;
+
+Timer downloadTimer;
+HttpClient downloadClient;
+int dowfid = 0;
+void downloadContentFiles()
+{
+	if (downloadClient.isProcessing()) return; // Please, wait.
+
+	if (downloadClient.isSuccessful())
+		dowfid++; // Success. Go to next file!
+	downloadClient.reset(); // Reset current download status
+
+	if (dowfid == 0)
+		downloadClient.downloadFile("http://www.2printbeta.de/download/esp8266/index.html.gz");
+	else if (dowfid == 1)
+		downloadClient.downloadFile("http://www.2printbeta.de/download/esp8266/chart.min.js.gz");
+	else if (dowfid == 2)
+		downloadClient.downloadFile("http://www.2printbeta.de/download/esp8266/index.css.gz");
+	else if (dowfid == 3)
+		downloadClient.downloadFile("http://www.2printbeta.de/download/esp8266/index.js.gz");
+	else if (dowfid == 4)
+		downloadClient.downloadFile("http://www.2printbeta.de/download/esp8266/logo.gif");
+	else
+	{
+		// Content download was completed
+		downloadTimer.stop();
+		//delete internal file
+		if (fileExist("index.html"))fileDelete("index.html");
+	}
+}
+
 
 void onFile(HttpRequest &request, HttpResponse &response)
 {
@@ -195,14 +285,6 @@ void onSet(HttpRequest &request, HttpResponse &response)
 			memcpy(data+16,&speed,4);
 			sendActiveCmd(eMove,20,data);
 
-		}
-		else if(request.getQueryParameter("network").length() > 0 )
-		{
-			ActiveConfig.NetworkSSID = request.getQueryParameter("network").c_str();
-			if(request.getQueryParameter("pwd") > 0) ActiveConfig.NetworkPassword = request.getQueryParameter("pwd");
-			ActiveConfig.mode = request.getQueryParameter("mode");
-			ActiveConfig.security = request.getQueryParameter("sec");
-			saveConfig(ActiveConfig);
 		}
 		else if(request.getQueryParameter("fan").length() > 0 )
 		{
@@ -395,22 +477,12 @@ void onIndex(HttpRequest &request, HttpResponse &response)
 	response.sendFile("index.html");
 }
 
-void onReboot(HttpRequest &request, HttpResponse &response)
+void onSetInternal(HttpRequest &request, HttpResponse &response)
 {
 	JsonObjectStream* stream = new JsonObjectStream();
 	JsonObject& json = stream->getRoot();
 
-	if(uploadInProgress)
-	{
-		json["error"] = "1";
-		json["message"] = "Upload in progress";
-	}
-	else if(!in_sync)
-	{
-		json["error"] = "1";
-		json["message"] = "Not connected";
-	}
-	else if (request.getRequestMethod() == RequestMethod::GET)
+	if (request.getRequestMethod() == RequestMethod::GET)
 	{
 		if(request.getQueryParameter("reboot").length() > 0)
 		{
@@ -421,6 +493,17 @@ void onReboot(HttpRequest &request, HttpResponse &response)
 			System.restart();
 			return;
 		}
+		else if(request.getQueryParameter("network").length() > 0 )
+		{
+			ActiveConfig.NetworkSSID = request.getQueryParameter("network").c_str();
+			if(request.getQueryParameter("pwd") > 0) ActiveConfig.NetworkPassword = request.getQueryParameter("pwd");
+			ActiveConfig.mode = request.getQueryParameter("mode");
+			ActiveConfig.security = request.getQueryParameter("sec");
+			saveConfig(ActiveConfig);
+		}
+
+		json["error"] = "0";
+		json["message"] = "Ok";
 	}
 	else
 	{
@@ -432,6 +515,7 @@ void onReboot(HttpRequest &request, HttpResponse &response)
 
 void startWebServer()
 {
+	//reset state vars
 	curState.temp1 = 0.0;
 	curState.temp1Target = 0.0;
 	curState.temp2 = -100.0;
@@ -454,13 +538,35 @@ void startWebServer()
 		curState.SDEntries[i][0] = 0;
 	}
 
+	//check required files
+	if (!fileExist("index.html.gz") ||
+		!fileExist("chart.min.js.gz") ||
+		!fileExist("index.css.gz") ||
+		!fileExist("index.js.gz") ||
+		!fileExist("logo.gif"))
+	{
+		debugf("no files found");
+		// if we are station, try to download files
+		if(ActiveConfig.mode == "STATION")
+		{
+			// Download server content at first
+			debugf("starting download");
+			downloadTimer.initializeMs(3000, downloadContentFiles).start();
+		}
+		spiffs_format_internal();
+		fileSetContent("index.html", defaultContent);
+		debugf("index html created");
+	}
+
+
+	// add http handlers
 	server.listen(80);
 	server.addPath("/", onIndex);
 	server.addPath("/index.html", onIndex);
 	server.addPath("/upload", onUpload);
 	server.addPath("/get", onGet);
 	server.addPath("/set", onSet);
-	server.addPath("/reboot", onReboot);
+	server.addPath("/setinternal", onSetInternal);
 
 	server.setDefaultHandler(onFile);
 	server.setPostHandler(onPost);
@@ -468,9 +574,6 @@ void startWebServer()
 
 void startFTP()
 {
-	if (!fileExist("index.html") && !fileExist("index.html.gz"))
-		fileSetContent("index.html", "<h3>Please connect to FTP and upload files from folder 'web' (details in code)</h3>");
-
 	// Start FTP server
 	ftp.listen(21);
 	ftp.addUser("me", "123"); // FTP account

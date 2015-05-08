@@ -29,6 +29,22 @@ void setup() {
   Debug_Serial.begin(MY_BAUDRATE);
 }
 
+void wifi_write(const uint8_t c)
+{
+  //TODO find out why normal, buffered send do not work correctly
+	
+  //workaround send uart data to ESP8266 directly without buffering
+  Uart* _pUart =(Uart*) USART0;
+  // Check if the transmitter is ready
+    while ((_pUart->UART_SR & UART_SR_TXRDY) != UART_SR_TXRDY) 
+    {
+        
+    }
+
+  // Send character
+   _pUart->UART_THR = c;
+}
+
 void loop() {
   // put your main code here, to run repeatedly:
   if(WIFI_Serial.available())
@@ -38,6 +54,6 @@ void loop() {
   
   if(Debug_Serial.available())
   {
-    WIFI_Serial.write(Debug_Serial.read());
+    wifi_write(Debug_Serial.read());
   }
 }

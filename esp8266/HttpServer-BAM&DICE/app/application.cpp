@@ -4,7 +4,6 @@
 #include "../include/webserver.h"
 #include "../include/arduino_com.h"
 
-
 Timer cmdTimer;
 
 void sendAPmode()
@@ -44,7 +43,6 @@ void connectFail()
 	//start services
 	startFTP();
 	startWebServer();
-
 
 	sendAPmode();
 

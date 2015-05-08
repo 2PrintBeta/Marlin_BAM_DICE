@@ -525,11 +525,13 @@
    // reboot
   function reboot()
   {
-	var url = "/reboot?reboot=1";
+	if (confirm('Are you sure you want to reboot ?')) {
+    	var url = "/setinternal?reboot=1";
 
-	xmlHttp = new XMLHttpRequest();
-	xmlHttp.open("GET", url, true);
-	xmlHttp.send( null );
+		xmlHttp = new XMLHttpRequest();
+		xmlHttp.open("GET", url, true);
+		xmlHttp.send( null );
+	}
   }
   function configChanged()
   {
@@ -537,7 +539,7 @@
   }
   function saveConfig()
   {
-	var url = "/set?network=";
+	var url = "/setinternal?network=";
 	url = url + document.getElementById("wifi_ssid").value;
 	url = url+ "&pwd=";
 	url = url + document.getElementById("wifi_pwd").value;

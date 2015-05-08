@@ -39,6 +39,9 @@
 #include "Network/UdpConnection.h"
 #include "Network/HttpFirmwareUpdate.h"
 #include "Network/URL.h"
+#include "Network/UdpConnection.h"
+#include "Network/HttpFirmwareUpdate.h"
+
 
 #include "../Services/ArduinoJson/ArduinoJson.h"
 #include "../Services/DateTime/DateTime.h"

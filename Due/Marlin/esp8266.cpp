@@ -165,6 +165,11 @@ void init_esp8266()
 	digitalWrite(ESP_CH_DOWN_PIN,HIGH);
 	digitalWrite(ESP_PROG_PIN,HIGH);
 	
+	//reset esp
+    digitalWrite(ESP_RESET_PIN,LOW);
+    delay(100);
+    digitalWrite(ESP_RESET_PIN,HIGH);
+	
 	// init wifi 
 	wifi.begin(WIFI_BAUDRATE);
 	wifi.setTimeout(TIMEOUT);
@@ -252,7 +257,7 @@ void handle_esp8266()
 
 void handle_cmd()
 {
-/*
+
 	MYSERIAL.print("new cmd: ");
 	MYSERIAL.print((int)esp_cmd.cmd);
 	MYSERIAL.print(" ");
@@ -262,7 +267,7 @@ void handle_cmd()
 	MYSERIAL.print((char*)esp_cmd.data);
 	MYSERIAL.print(" ");
 	MYSERIAL.println((int)esp_cmd.checksum);	
-*/
+
 	//check checksum
 	unsigned char checksum = calc_crc(&esp_cmd);
 	if(esp_cmd.checksum != checksum)
@@ -704,9 +709,9 @@ void wifi_write(const uint8_t c)
         // Check if the transmitter is ready
   
 	while ((_pUart->UART_SR & UART_SR_TXRDY) != UART_SR_TXRDY) 
-        {
-         
-        }
+    {
+        
+    }
 
 	// Send character
 	 _pUart->UART_THR = c;
