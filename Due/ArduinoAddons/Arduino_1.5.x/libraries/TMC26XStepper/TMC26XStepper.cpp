@@ -1058,6 +1058,10 @@ if (this->started) {
 inline void TMC26XStepper::send262(unsigned long datagram) {
 	unsigned long i_datagram;
     
+    // no interrupts during SPI
+    DISABLE_INT();
+	
+
 	if(mosi_pin == -1)  // hardware SPI
 	{
 	  #ifndef ARDUINO_ARCH_SAM
@@ -1077,8 +1081,7 @@ inline void TMC26XStepper::send262(unsigned long datagram) {
       digitalWriteDirect(sck_pin,HIGH);
     }
 
-
-	//select the TMC driver
+    //select the TMC driver
 	digitalWriteDirect(cs_pin,LOW);
 
 	//ensure that only valid bist are set (0-19)
@@ -1101,8 +1104,7 @@ inline void TMC26XStepper::send262(unsigned long datagram) {
 	}
 	else
 	{
-	    // no interrupts during byte receive - about 8 us
-       DISABLE_INT();
+
 	    //write/read the values
 	   i_datagram = SoftSPI_Transfer((datagram >> 16) & 0xff);
 	   i_datagram <<= 8;
@@ -1110,8 +1112,6 @@ inline void TMC26XStepper::send262(unsigned long datagram) {
 	   i_datagram <<= 8;
 	   i_datagram |= SoftSPI_Transfer((datagram) & 0xff);
 	   i_datagram >>= 4;
-       // enable interrupts
-       ENABLE_INT();
 	}
 	
 #ifdef DEBUG
@@ -1133,6 +1133,8 @@ inline void TMC26XStepper::send262(unsigned long datagram) {
 	  #endif
 	}
 
+    // enable interrupts
+    ENABLE_INT();
 	
 	//store the datagram as status result
 	driver_status_result = i_datagram;

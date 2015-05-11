@@ -333,7 +333,7 @@ FORCE_INLINE void trapezoid_generator_reset() {
 HAL_STEP_TIMER_ISR
 {
   HAL_timer_isr_prologue (STEP_TIMER_NUM);
-
+  
   // If there is no current block, attempt to pop one from the buffer
   if (current_block == NULL) {
     // Anything in the buffer?

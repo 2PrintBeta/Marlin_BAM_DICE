@@ -361,7 +361,7 @@
 
 #define CONTROLLERFAN_PIN  -1 //Pin used for the fan to cool controller
 
-#define PS_ON_PIN          12
+#define PS_ON_PIN          -1
 
 #define KILL_PIN           41
 

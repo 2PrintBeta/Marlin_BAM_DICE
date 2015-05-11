@@ -28,7 +28,7 @@
 #define wifi Serial1
 #define TIMEOUT 5000
 #define WIFI_BAUDRATE 1000000
-#define DEBUG 1
+#define DEBUG 0
 
 #define STORAGE_SIZE 50
 char address[STORAGE_SIZE] = {0};
@@ -257,7 +257,7 @@ void handle_esp8266()
 
 void handle_cmd()
 {
-
+#if DEBUG > 0
 	MYSERIAL.print("new cmd: ");
 	MYSERIAL.print((int)esp_cmd.cmd);
 	MYSERIAL.print(" ");
@@ -267,7 +267,7 @@ void handle_cmd()
 	MYSERIAL.print((char*)esp_cmd.data);
 	MYSERIAL.print(" ");
 	MYSERIAL.println((int)esp_cmd.checksum);	
-
+#endif
 	//check checksum
 	unsigned char checksum = calc_crc(&esp_cmd);
 	if(esp_cmd.checksum != checksum)

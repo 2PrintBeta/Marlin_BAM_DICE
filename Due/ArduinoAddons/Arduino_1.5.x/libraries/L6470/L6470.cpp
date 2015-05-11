@@ -598,6 +598,10 @@ byte L6470::Xfer(byte data){
   // a bit more reasonable, because we can include more functionality in it.
   byte data_out;
   
+  // no interrupts during byte receive 
+   DISABLE_INT();
+
+
   if(_MOSIPin != -1)
   {
     //make sure SCK is high before selecing the device
@@ -613,13 +617,13 @@ byte L6470::Xfer(byte data){
   }
   else
   {
-    // no interrupts during byte receive - about 8 us
-    DISABLE_INT();
+  
 	data_out =  SoftSPI_Transfer(data);
-    // enable interrupts
-    ENABLE_INT();
   }
   digitalWriteDirect(_SSPin,HIGH);
+    // enable interrupts
+    ENABLE_INT();
+
   return data_out;
 }
 
