@@ -66,6 +66,7 @@ enum ESP_CMDs
 	eOpenFile,
 	eCloseFile,
 	eFileData,
+	eGcode,
 	
 	eGetNetworkSSID,
 	eGetNetworkPWD,
@@ -518,6 +519,13 @@ void handle_cmd()
 			if(card.write((char*)esp_cmd.data,esp_cmd.length)) esp_send_2(true,"");
 			else esp_send_2(false,"write failed");
 					
+			break;
+		}
+		case eGcode:
+		{
+			esp_cmd.data[esp_cmd.length] =0;
+			enquecommand((char*)esp_cmd.data);
+			esp_send_2(true,"");
 			break;
 		}
 		case eGetNetworkSSID:

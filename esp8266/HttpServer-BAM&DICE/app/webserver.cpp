@@ -291,6 +291,13 @@ void onSet(HttpRequest &request, HttpResponse &response)
 			unsigned char data = request.getQueryParameter("fan").toInt();
 			sendActiveCmd(eSetFan,1,&data);
 		}
+		else if(request.getQueryParameter("gcode").length() > 0 )
+		{
+			String data = request.getQueryParameter("gcode");
+			if(data.length() > 59) data = data.substring(0,59);
+			sendActiveCmd(eGcode,data.length(),(unsigned char*)data.c_str());
+		}
+
 		else
 		{
 			json["error"] = "0";

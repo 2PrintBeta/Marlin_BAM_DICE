@@ -206,6 +206,9 @@
 	processRequest();
 	if (xmlHttp.readyState == 4) {
 		var data = JSON.parse(xmlHttp.responseText);
+		
+		if(data.error==1) return;
+		
 		//temperatures
 		document.getElementById("temp1_value").innerHTML = data.Temp1 + "&deg;C";
 		document.getElementById("temp1_bar").style.height = ((data.Temp1/300)*100)+"%";
@@ -359,6 +362,19 @@
   function retract()
   {
 	move(document.getElementById("retract_amount").value*-1,4,document.getElementById("retract_speed").value);
+  }
+  function gcode()
+  {
+	var code = document.getElementById("gcode").value;
+	if(code.length > 0) sendGcode(code);	
+  }
+  function sendGcode(code)
+  {
+	var url = "/set?gcode=" + encodeURIComponent(code);
+	xmlHttp = new XMLHttpRequest();
+	xmlHttp.onreadystatechange = processRequest;
+	xmlHttp.open("GET", url, true);
+	xmlHttp.send( null );
   }
   // home axes, 0 is all axis 
   function home(axis)

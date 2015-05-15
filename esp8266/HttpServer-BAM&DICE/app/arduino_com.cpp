@@ -104,7 +104,7 @@ void esp_send_debug(char* dbg);
 ///////////////////////////
 // handle arduino comm
 ///////////////////////////
-void handle_ardunio()
+void handle_arduino()
 {
 	if(cmd_state == eCmdIdle)
 	{
@@ -390,7 +390,7 @@ void sendActiveCmd(ESP_CMDs cmd,int len,unsigned char* data)
 	//wait till any pending cmd is finished
 	while(cmd_state != eCmdIdle)
 	{
-		handle_ardunio();
+		handle_arduino();
 	}
 
 	//create cmd
@@ -403,7 +403,7 @@ void sendActiveCmd(ESP_CMDs cmd,int len,unsigned char* data)
 	//wait till cmd is handled
 	while(cmd_state != eCmdIdle)
 	{
-		handle_ardunio();
+		handle_arduino();
 	}
 }
 

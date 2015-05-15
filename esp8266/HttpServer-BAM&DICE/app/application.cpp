@@ -12,7 +12,7 @@ void sendAPmode()
 	ActiveConfig.mode = "AP";
 
 	// start cmd interface
-	cmdTimer.initializeMs(500, handle_ardunio).start();
+	cmdTimer.initializeMs(500, handle_arduino).start();
 }
 
 void sendSTATIONmode()
@@ -21,7 +21,7 @@ void sendSTATIONmode()
 	ActiveConfig.mode = "STATION";
 
 	// start cmd interface
-	cmdTimer.initializeMs(500, handle_ardunio).start();
+	cmdTimer.initializeMs(500, handle_arduino).start();
 }
 
 // Will be called when WiFi station was connected to AP

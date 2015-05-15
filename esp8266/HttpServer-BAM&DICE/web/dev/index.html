@@ -126,7 +126,7 @@
 						<td>
 						with 
 						<input id="extrude_speed" value="30" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
-						mm/m
+						mm/min
 						</td>
 					</tr>
 					<tr>
@@ -140,7 +140,7 @@
 						<td>
 						with
 						<input id="retract_speed" value="30" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
-						mm/m
+						mm/min
 						</td>
 					</tr>
 					<tr>
@@ -153,6 +153,16 @@
 						<td>
 						Current speed:
 						<div id="fanSpeedVal"> 0 </div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<div class="movebutton movelabel"> <span>Gcode</span> </div>
+						</td>
+						
+						<td colspan="2">
+							<input id="gcode" class="showvalue">
+							<a href="#" onclick="gcode();" class="button"> <span>Send</span> </a>
 						</td>
 					</tr>
 				</table>
@@ -172,7 +182,7 @@
 				<table id="axisarea" class="showvalue">
 					<tr>
 						<td>
-						<input id="move_speed" value="300" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
+						<input id="move_speed" value="300" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue">mm/min
 						</td><td></td><td></td><td></td><td>
 						<div class="movebutton movelabel"> <span>+Y</span> </div>
 						</td><td></td><td></td><td></td><td></td><td>
@@ -254,7 +264,9 @@
 					</tr>
 
 					<tr>
-						<td></td><td></td><td></td><td></td><td>
+						<td>
+						<a href="#" onclick="sendGcode('M84');" class="movebutton"> <span>Motor Off</span> </a>
+						</td><td></td><td></td><td></td><td>
 						<div class="movebutton movelabel"> <span>-Y</span> </div>
 						</td><td></td><td></td><td></td><td></td><td>
 						<div class="movebutton movelabel"> <span>-Z</span> </div>

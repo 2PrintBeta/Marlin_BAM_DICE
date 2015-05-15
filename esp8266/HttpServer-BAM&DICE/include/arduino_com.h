@@ -20,6 +20,7 @@ enum ESP_CMDs
 	eOpenFile,
 	eCloseFile,
 	eFileData,
+    eGcode,
 
 	eGetNetworkSSID,
 	eGetNetworkPWD,
@@ -31,7 +32,7 @@ enum ESP_CMDs
 
 	eSetNetworkSSID, //this commands return the current state
 	eSetNetworkMode, //this commands return the current state
-	eSetNetworkIP, //this commands return the current state
+	eSetNetworkIP,   //this commands return the current state
 
 	// answers
 	eOk,
@@ -45,7 +46,7 @@ volatile extern bool cmd_failed;
 extern String cmd_error_str;
 volatile extern bool in_sync;
 
-void handle_ardunio();
+void handle_arduino();
 
 void sendActiveCmd(ESP_CMDs cmd,int len,unsigned char* data); //blocks till its sent, or timeout
 
