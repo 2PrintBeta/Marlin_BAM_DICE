@@ -342,6 +342,9 @@ void handle_cmd()
 		}
 		case eMove:
 		{
+			//do not move while homing
+			if(homing_in_progress) return;
+			
 			float x,y,z,e,f;
 			memcpy(&x,esp_cmd.data,4);
 			memcpy(&y,esp_cmd.data+4,4);

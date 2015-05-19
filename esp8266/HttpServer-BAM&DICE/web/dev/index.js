@@ -3,6 +3,9 @@
   var temp_chart;
   var chart_created=false;
   var config_changed=false;
+  var temp1Target_changed=false;
+  var temp2Target_changed=false;
+  var temp3Target_changed=false;
   
   function createTempChart(temp1,temp1Target,temp2,temp2Target,temp3,temp3Target) 
   {
@@ -149,14 +152,14 @@
 			if(tooltip)
 			{
 				var html;
-				html = '<span style="color:' + tooltip.legendColors[0].fill + ';font-size:'+tooltip.fontSize+'px">Hotend 1: ' +tooltip.labels[0] + '<br/></span>';
+				html = '<span style="color:' + tooltip.legendColors[0].fill + ';font-size:'+tooltip.fontSize+'px">Hotend 1: ' +tooltip.labels[0] + ' (' + tooltip.labels[1] + ')<br/></span>';
 				if(tooltip.labels.length > 4) 
 				{
-					html += '<span style="color:' + tooltip.legendColors[2].fill + ';font-size:'+tooltip.fontSize+'px">Hotend 2: ' +tooltip.labels[2] + '<br/></span>';
-					html += '<span style="color:' + tooltip.legendColors[4].fill + ';font-size:'+tooltip.fontSize+'px">Print Bed: ' +tooltip.labels[4] + '<br/></span>';
+					html += '<span style="color:' + tooltip.legendColors[2].fill + ';font-size:'+tooltip.fontSize+'px">Hotend 2: ' +tooltip.labels[2] + ' (' + tooltip.labels[3] + ') <br/></span>';
+					html += '<span style="color:' + tooltip.legendColors[4].fill + ';font-size:'+tooltip.fontSize+'px">Print Bed: ' +tooltip.labels[4] + ' (' + tooltip.labels[5] + ')<br/></span>';
 				}
 				else
-					html += '<span style="color:' + tooltip.legendColors[2].fill + ';font-size:'+tooltip.fontSize+'px">Print Bed: ' +tooltip.labels[2] + '<br/></span>';
+					html += '<span style="color:' + tooltip.legendColors[2].fill + ';font-size:'+tooltip.fontSize+'px">Print Bed: ' +tooltip.labels[2] + ' (' + tooltip.labels[3] + ')<br/></span>';
 			
 				
 				document.getElementById('chart_legend').innerHTML =html;
@@ -224,6 +227,10 @@
 		document.getElementById("bed_value").innerHTML = data.Bed + "&deg;C";
 		document.getElementById("bed_bar").style.height = ((data.Bed/300)*100)+"%";
 		document.getElementById("bed_goal").style.bottom = ((data.BedTarget/300)*100)+"%";
+		
+		if(temp1Target_changed == false) document.getElementById("temp1").value = data.Temp1Target;
+		if(temp2Target_changed == false) document.getElementById("temp2").value = data.Temp2Target;
+		if(temp3Target_changed == false) document.getElementById("bed").value = data.BedTarget;
 	
 		// Position
 		document.getElementById("cur_position").innerHTML = "X "+data.xPos+" Y "+data.yPos+" Z "+data.zPos;
@@ -319,17 +326,27 @@
   {
 	var url = "/set?heater=" + heater +"&temp=";
 	var value =0;
-	if(heater == 1) value = document.getElementById("temp1").value;
-	else if(heater==2) value = document.getElementById("temp2").value;
-	else if(heater==3) value = document.getElementById("bed").value;
-	
+	if(heater == 1)
+	{
+		value = document.getElementById("temp1").value;
+		temp1Target_changed=false;
+	}
+	else if(heater==2)
+	{	
+		value = document.getElementById("temp2").value;
+		temp2Target_changed=false;
+	}
+	else if(heater==3)
+	{
+		value = document.getElementById("bed").value;
+		temp3Target_changed=false;
+	}
 	url = url+value;
 
 	xmlHttp = new XMLHttpRequest();
 	xmlHttp.onreadystatechange = processRequest;
 	xmlHttp.open("GET", url, true);
 	xmlHttp.send( null );
-
   }
   function setFanSpeed()
   {

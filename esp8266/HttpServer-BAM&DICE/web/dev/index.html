@@ -12,7 +12,7 @@
    <body bgcolor="#5f5f5f">
    <table style="margin-left: auto; margin-right: auto;">
 	<tr>
-		<td><img src="logo.gif" alt="logo"> </td> <td> <h1> WIFI Controller </h1></td>
+		<td><img src="logo.gif" alt="BAM&DICE"> </td> <td> <h1> Remote Controller </h1></td>
 	</tr>
    </table>    
    <div id="main">
@@ -70,7 +70,7 @@
 					<strong class="total" id="temp1_value" style="bottom: 10%">10 °C</strong>
 					<span class="amount" id="temp1_bar" style="height: 10%"></span>
 					<strong class="goal" id="temp1_goal" style="bottom: 90%"></strong>
-					<input id="temp1" maxlength="3" size="1" onkeypress='return isNumberKey(event)' class="target">
+					<input id="temp1" maxlength="3" size="1" onkeypress='return isNumberKey(event)' oninput='temp1Target_changed=true' class="target">
 				</span>
 				<div class="bulb">
 					<span class="red-circle"></span>
@@ -86,7 +86,7 @@
 					<strong class="total" id="temp2_value" style="bottom: 10%">10 °C</strong>
 					<span class="amount" id="temp2_bar" style="height: 10%"></span>
 					<strong class="goal" id="temp2_goal" style="bottom: 90%"></strong>
-					<input id="temp2" maxlength="3" size="1" onkeypress='return isNumberKey(event)' class="target">
+					<input id="temp2" maxlength="3" size="1" onkeypress='return isNumberKey(event)' oninput='temp2Target_changed=true' class="target">
 				</span>
 				<div class="bulb">
 					<span class="red-circle"></span>
@@ -102,7 +102,7 @@
 					<strong class="total" id="bed_value" style="bottom: 10%">10 °C</strong>
 					<span class="amount" id="bed_bar" style="height: 10%"></span>
 					<strong class="goal" id="bed_goal" style="bottom: 90%"></strong>
-					<input id="bed" maxlength="3" size="1" onkeypress='return isNumberKey(event)' class="target">
+					<input id="bed" maxlength="3" size="1" onkeypress='return isNumberKey(event)' oninput='temp3Target_changed=true' class="target">
 				</span>
 				<div class="bulb">
 					<span class="red-circle"></span>
@@ -117,7 +117,7 @@
 				<table>
 					<tr>
 						<td> 
-						<a href="#" onclick="extrude();" class="button"> <span>Extrude</span> </a>
+						<a href="#" onclick="extrude();" class="button" style="width: 90%;"> <span>Extrude</span> </a>
 						</td> 
 						<td>
 						<input id="extrude_amount" value="5" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue"> 
@@ -131,7 +131,7 @@
 					</tr>
 					<tr>
 						<td> 
-						<a href="#" onclick="retract();" class="button"> <span>Retract</span> </a>
+						<a href="#" onclick="retract();" class="button" style="width: 90%;"> <span>Retract</span> </a>
 						</td> 
 						<td>
 						<input id="retract_amount" value="5" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
@@ -145,7 +145,7 @@
 					</tr>
 					<tr>
 						<td>
-							<a href="#" onclick="setFanSpeed();" class="button"> <span>Set fan</span> </a>
+							<a href="#" onclick="setFanSpeed();" class="button" style="width: 90%;"> <span>Set fan</span> </a>
 						</td>
 						<td>
 						<input id="fanSpeed" value="0" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue">
@@ -157,7 +157,7 @@
 					</tr>
 					<tr>
 						<td>
-							<div class="movebutton movelabel"> <span>Gcode</span> </div>
+							<div class="movelabel"> <span>Gcode</span> </div>
 						</td>
 						
 						<td colspan="2">
@@ -182,7 +182,7 @@
 				<table id="axisarea" class="showvalue">
 					<tr>
 						<td>
-						<input id="move_speed" value="300" maxlength="4" size="1" onkeypress='return isNumberKey(event)' class="showvalue">mm/min
+						<input id="move_speed" value="300" maxlength="5" size="1" onkeypress='return isNumberKey(event)' class="showvalue">&nbsp;mm/min
 						</td><td></td><td></td><td></td><td>
 						<div class="movebutton movelabel"> <span>+Y</span> </div>
 						</td><td></td><td></td><td></td><td></td><td>
@@ -246,11 +246,11 @@
 					<tr>
 						<td></td>
 						<td colspan="2" rowspan="2">
-						<a href="#" onclick="home(3);" class="movebutton"> <span>Home Z</span> </a>
+						<a href="#" onclick="home(0);" class="movebutton"> <span>Home All</span> </a>
 						</td><td></td><td>
 						<a href="#" onclick="move_axis(-1,2);" class="movebutton"> <span>-1</span> </a>
 						</td><td></td><td colspan="2" rowspan="2">
-						<a href="#" onclick="home(0);" class="movebutton"> <span>Home All</span> </a>
+						<a href="#" onclick="home(3);" class="movebutton"> <span>Home Z</span> </a>
 						</td><td></td><td>
 						<a href="#" onclick="move_axis(-1,3);" class="movebutton"> <span>-1</span> </a>
 						</td>
