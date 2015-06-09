@@ -445,13 +445,13 @@ const unsigned int dropsegments=5; //everything with less than this number of st
  * you need to import the TMC26XStepper library into the arduino IDE for this
  ******************************************************************************/
 
-#define HAVE_TMCDRIVER
+//#define HAVE_TMCDRIVER
 #ifdef HAVE_TMCDRIVER
 
-	#define X_IS_TMC
-	#define X_MAX_CURRENT 1000  //in mA
-	#define X_SENSE_RESISTOR 91 //in mOhms
-	#define X_MICROSTEPS 128     //number of microsteps
+//	#define X_IS_TMC
+//	#define X_MAX_CURRENT 1000  //in mA
+//	#define X_SENSE_RESISTOR 91 //in mOhms
+//	#define X_MICROSTEPS 128     //number of microsteps
 	
 //	#define X2_IS_TMC
 //	#define X2_MAX_CURRENT 1000  //in mA
