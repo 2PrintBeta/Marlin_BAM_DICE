@@ -637,7 +637,9 @@ void call_regular(void)
   manage_inactivity();
   checkHitEndstops();
   lcd_update();
+  #ifdef HAVE_ESP8266
   handle_esp8266();
+  #endif
 }
 
 void get_command()

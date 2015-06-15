@@ -261,7 +261,7 @@ FORCE_INLINE unsigned long calc_timer(unsigned long step_rate) {
     
   unsigned long timer;
   if(step_rate > MAX_STEP_FREQUENCY) step_rate = MAX_STEP_FREQUENCY;
-
+  
   if(step_rate > STEP_FREQUENCY_QUARTER) { // If steprate > 20kHz >> step 4 times
     step_rate = (step_rate >> 2);
     step_loops = 4;
@@ -274,7 +274,9 @@ FORCE_INLINE unsigned long calc_timer(unsigned long step_rate) {
     step_loops = 1;
   }
 
-  if(step_rate < (F_CPU/500000)) step_rate = (F_CPU/500000);
+  //minimum speed
+  if(step_rate < (F_CPU/30000)) step_rate = (F_CPU/30000);
+  
 
 #if defined(ARDUINO_ARCH_AVR)
   step_rate -= (F_CPU/500000); // Correct for minimal speed
@@ -327,6 +329,7 @@ FORCE_INLINE void trapezoid_generator_reset() {
 
 }
 
+
 // "The Stepper Driver Interrupt" - This timer interrupt is the workhorse.
 // It pops blocks from the block_buffer and executes them by pulsing the stepper pins appropriately.
 //ISR(TIMER1_COMPA_vect)
@@ -336,6 +339,7 @@ HAL_STEP_TIMER_ISR
   
   // If there is no current block, attempt to pop one from the buffer
   if (current_block == NULL) {
+    
     // Anything in the buffer?
     current_block = plan_get_current_block();
     if (current_block != NULL) {
@@ -362,6 +366,8 @@ HAL_STEP_TIMER_ISR
     else {
         //OCR1A=2000; // 1kHz.
     	HAL_timer_set_count (STEP_TIMER_NUM, HAL_TIMER_RATE / 1000); // 1kHz
+        
+  
     }
   }
 

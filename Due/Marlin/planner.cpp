@@ -222,6 +222,7 @@ void calculate_trapezoid_for_block(block_t *block, float entry_factor, float exi
 #endif //ADVANCE
   }
   CRITICAL_SECTION_END;
+  
 }                    
 
 // Calculates the maximum allowable speed at this point when you must be able to reach target_velocity using the 
@@ -535,7 +536,7 @@ void plan_buffer_line(const float &x, const float &y, const float &z, const floa
   // Rest here until there is room in the buffer.
   while(block_buffer_tail == next_buffer_head)
   {
-	call_regular();
+      call_regular();
   }
 
 #ifdef ENABLE_AUTO_BED_LEVELING
@@ -945,6 +946,7 @@ block->steps_y = labs((target[X_AXIS]-position[X_AXIS]) - (target[Y_AXIS]-positi
   planner_recalculate();
 
   st_wake_up();
+  
 }
 
 #ifdef ENABLE_AUTO_BED_LEVELING
