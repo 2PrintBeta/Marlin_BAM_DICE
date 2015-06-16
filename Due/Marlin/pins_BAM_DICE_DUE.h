@@ -111,6 +111,10 @@
         #define BTN_ENC 35
 
         #define SDCARDDETECT 49
+		
+		#define ENCODER_STEPS_PER_MENU_ITEM 1
+		#define ENCODER_PULSES_PER_STEP 3
+		
         #endif
 
       #endif
