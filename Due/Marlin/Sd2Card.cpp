@@ -20,8 +20,6 @@
 #include "Marlin.h"
 #ifdef SDSUPPORT
 #include "Sd2Card.h"
-#include "Sd2PinMap.h"
-#include "fastio.h"
 //------------------------------------------------------------------------------
 
 
@@ -31,76 +29,7 @@
 // functions for hardware SPI
 //------------------------------------------------------------------------------
 
-#ifdef ARCH_ARDUINO_AVR
-
-// make sure SPCR rate is in expected bits
-#if (SPR0 != 0 || SPR1 != 1)
-#error unexpected SPCR bits
-#endif
-/**
- * Initialize hardware SPI
- */
-static void spiInit(void) {
-	// set a default rate
-	spiSetSckRate (SPI_HALF_SPEED);
-}
-//------------------------------------------------------------------------------
-
-/**
- *
- * The SPI clock will be set to F_CPU/pow(2, 1 + sckRateID). The maximum
- * SPI rate is F_CPU/2 for \a sckRateID = 0 and the minimum rate is F_CPU/128
- * for \a scsRateID = 6.
- *
- */
-static void spiSetSckRate (uint8_t spiRate) {
-  // See avr processor documentation
-  SPCR = (1 << SPE) | (1 << MSTR) | (spiRate >> 1);
-  SPSR = spiRate & 1 || spiRate == 6 ? 0 : 1 << SPI2X;
-}
-
-//------------------------------------------------------------------------------
-/** SPI receive a byte */
-static uint8_t spiRec() {
-  SPDR = 0XFF;
-  while (!(SPSR & (1 << SPIF))) { /* Intentionally left empty */ }
-  return SPDR;
-}
-//------------------------------------------------------------------------------
-/** SPI read data - only one call so force inline */
-static inline __attribute__((always_inline))
-void spiRead(uint8_t* buf, uint16_t nbyte) {
-  if (nbyte-- == 0) return;
-  SPDR = 0XFF;
-  for (uint16_t i = 0; i < nbyte; i++) {
-    while (!(SPSR & (1 << SPIF))) { /* Intentionally left empty */ }
-    buf[i] = SPDR;
-    SPDR = 0XFF;
-  }
-  while (!(SPSR & (1 << SPIF))) { /* Intentionally left empty */ }
-  buf[nbyte] = SPDR;
-}
-//------------------------------------------------------------------------------
-/** SPI send a byte */
-static void spiSend(uint8_t b) {
-  SPDR = b;
-  while (!(SPSR & (1 << SPIF))) { /* Intentionally left empty */ }
-}
-//------------------------------------------------------------------------------
-/** SPI send block - only one call so force inline */
-static inline __attribute__((always_inline))
-  void spiSendBlock(uint8_t token, const uint8_t* buf) {
-  SPDR = token;
-  for (uint16_t i = 0; i < 512; i += 2) {
-    while (!(SPSR & (1 << SPIF))) { /* Intentionally left empty */ }
-    SPDR = buf[i];
-    while (!(SPSR & (1 << SPIF))) { /* Intentionally left empty */ }
-    SPDR = buf[i + 1];
-  }
-  while (!(SPSR & (1 << SPIF))) { /* Intentionally left empty */ }
-}
-
-#elif defined (ARDUINO_ARCH_SAM)
+#if defined (ARDUINO_ARCH_SAM)
 
 #include <SPI.h>
 

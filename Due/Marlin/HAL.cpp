@@ -88,12 +88,6 @@ void sei(void)
 	interrupts();
 }
 
-void _delay_ms (int delay_ms)
-{
-	//todo: port for Due?
-	delay (delay_ms);
-}
-
 extern "C" {
   extern unsigned int _ebss; // end of bss section
 }
@@ -176,17 +170,16 @@ unsigned char eeprom_read_byte(unsigned char *pos)
 // Timers
 // --------------------------------------------------------------------------
 
-typedef struct
-{
+typedef struct {
     Tc          *pTimerRegs;
     uint16_t    channel;
     IRQn_Type   IRQ_Id;
-  } tTimerConfig ;
+} tTimerConfig;
 
 #define  NUM_HARDWARE_TIMERS 9
 
 static const tTimerConfig TimerConfig [NUM_HARDWARE_TIMERS] =
-  {
+{
     { TC0, 0, TC0_IRQn},
     { TC0, 1, TC1_IRQn},
     { TC0, 2, TC2_IRQn},
@@ -196,12 +189,49 @@ static const tTimerConfig TimerConfig [NUM_HARDWARE_TIMERS] =
     { TC2, 0, TC6_IRQn},
     { TC2, 1, TC7_IRQn},
     { TC2, 2, TC8_IRQn},
-  };
+};
+
+/*
+	Timer_clock1: Prescaler 2 -> 42MHz
+	Timer_clock2: Prescaler 8 -> 10.5MHz
+	Timer_clock3: Prescaler 32 -> 2.625MHz
+	Timer_clock4: Prescaler 128 -> 656.25kHz
+*/
+
+// new timer by Ps991
+// thanks for that work
+// http://forum.arduino.cc/index.php?topic=297397.0
+
+void HAL_step_timer_start() {
+  pmc_set_writeprotect(false); //remove write protection on registers
+  
+  // Timer for stepper
+  // Timer 3 HAL.h STEP_TIMER_NUM
+  // uint8_t timer_num = STEP_TIMER_NUM;
+  
+  // Get the ISR from table
+  Tc *tc = STEP_TIMER_COUNTER;
+  IRQn_Type irq = STEP_TIMER_IRQN;
+  uint32_t channel = STEP_TIMER_CHANNEL;
+
+  pmc_enable_periph_clk((uint32_t)irq); //we need a clock?
+  
+  tc->TC_CHANNEL[channel].TC_CCR = TC_CCR_CLKDIS;
+  
+  tc->TC_CHANNEL[channel].TC_SR; // clear status register
+  tc->TC_CHANNEL[channel].TC_CMR =  TC_CMR_WAVSEL_UP_RC | TC_CMR_WAVE | TC_CMR_TCCLKS_TIMER_CLOCK1;
+
+  tc->TC_CHANNEL[channel].TC_IER /*|*/= TC_IER_CPCS; //enable interrupt on timer match with register C
+  tc->TC_CHANNEL[channel].TC_IDR = ~TC_IER_CPCS;
+  tc->TC_CHANNEL[channel].TC_RC   = (VARIANT_MCK >> 1) / 1000; // start with 1kHz as frequency; //interrupt occurs every x interations of the timer counter
+  
+  tc->TC_CHANNEL[channel].TC_CCR = TC_CCR_CLKEN | TC_CCR_SWTRG;
+  
+  NVIC_EnableIRQ(irq); //enable Nested Vector Interrupt Controller
+}
 
 
-void HAL_timer_start (uint8_t timer_num, uint32_t frequency)
-{
-
+void HAL_temp_timer_start (uint8_t timer_num) {
 	Tc *tc = TimerConfig [timer_num].pTimerRegs;
 	IRQn_Type irq = TimerConfig [timer_num].IRQ_Id;
 	uint32_t channel = TimerConfig [timer_num].channel;
@@ -214,49 +244,107 @@ void HAL_timer_start (uint8_t timer_num, uint32_t frequency)
 	NVIC_SetPriority(irq, NVIC_EncodePriority(4, 6, 0));
 	
 	TC_Configure (tc, channel, TC_CMR_CPCTRG | TC_CMR_TCCLKS_TIMER_CLOCK4);
-  tc->TC_CHANNEL[channel].TC_IER |= TC_IER_CPCS; //enable interrupt on timer match with register C
+    tc->TC_CHANNEL[channel].TC_IER |= TC_IER_CPCS; //enable interrupt on timer match with register C
 
-	tc->TC_CHANNEL[channel].TC_RC   = (VARIANT_MCK >> 7) / 2000;
+	tc->TC_CHANNEL[channel].TC_RC   = (VARIANT_MCK >> 7) / TEMP_FREQUENCY;
 	TC_Start(tc, channel);
-
-	//enable interrupt on RC compare
-	//tc->TC_CHANNEL[channel].TC_IER = TC_IER_CPCS;
-	//tc->TC_CHANNEL[channel].TC_IDR = ~TC_IER_CPCS;
 
 	NVIC_EnableIRQ(irq);
 }
 
-void HAL_timer_enable_interrupt (uint8_t timer_num)
-{
+void HAL_timer_enable_interrupt (uint8_t timer_num) {
 	const tTimerConfig *pConfig = &TimerConfig [timer_num];
-
-	pConfig->pTimerRegs->TC_CHANNEL [pConfig->channel].TC_IER = TC_IER_CPCS;
+	pConfig->pTimerRegs->TC_CHANNEL [pConfig->channel].TC_IER = TC_IER_CPCS; //enable interrupt
+	pConfig->pTimerRegs->TC_CHANNEL [pConfig->channel].TC_IDR = ~TC_IER_CPCS;//remove disable interrupt
 }
 
-void HAL_timer_disable_interrupt (uint8_t timer_num)
-{
+void HAL_timer_disable_interrupt (uint8_t timer_num) {
 	const tTimerConfig *pConfig = &TimerConfig [timer_num];
-
-	pConfig->pTimerRegs->TC_CHANNEL [pConfig->channel].TC_IDR = TC_IER_CPCS;
+	pConfig->pTimerRegs->TC_CHANNEL [pConfig->channel].TC_IDR = TC_IER_CPCS; //disable interrupt
 }
 
-void HAL_timer_set_count (uint8_t timer_num, uint32_t count)
-{
-	const tTimerConfig *pConfig = &TimerConfig [timer_num];
-
-	TC_SetRC (pConfig->pTimerRegs, pConfig->channel, count);
+int HAL_timer_get_count (uint8_t timer_num) {
+	Tc *tc = TimerConfig [timer_num].pTimerRegs;
+	uint32_t channel = TimerConfig [timer_num].channel;
+	return tc->TC_CHANNEL[channel].TC_RC;
 }
 
-void HAL_timer_isr_prologue (uint8_t timer_num)
-{
-	const tTimerConfig *pConfig = &TimerConfig [timer_num];
+// Due have no tone, this is from Repetier 0.92.3
+static uint32_t tone_pin;
 
-	TC_GetStatus (pConfig->pTimerRegs, pConfig->channel);
+void tone(uint8_t pin, int frequency) {
+  // set up timer counter 1 channel 0 to generate interrupts for
+  // toggling output pin.  
+  
+  /*TC1, 1, TC4_IRQn*/
+  uint8_t timer_num = BEEPER_TIMER_NUM;
+  
+  Tc *tc = TimerConfig [timer_num].pTimerRegs;
+  IRQn_Type irq = TimerConfig [timer_num].IRQ_Id;
+	uint32_t channel = TimerConfig [timer_num].channel;
+  
+  SET_OUTPUT(pin);
+  tone_pin = pin;
+  pmc_set_writeprotect(false);
+  pmc_enable_periph_clk((uint32_t)irq);
+
+  TC_Configure(tc, channel, TC_CMR_WAVE | TC_CMR_WAVSEL_UP_RC | 
+               TC_CMR_TCCLKS_TIMER_CLOCK4);  // TIMER_CLOCK4 -> 128 divisor
+  uint32_t rc = VARIANT_MCK / 128 / frequency; 
+  TC_SetRA(tc, channel, rc/2);                     // 50% duty cycle
+  TC_SetRC(tc, channel, rc);
+  TC_Start(tc, channel);
+  tc->TC_CHANNEL[channel].TC_IER=TC_IER_CPCS;
+  tc->TC_CHANNEL[channel].TC_IDR=~TC_IER_CPCS;
+  NVIC_EnableIRQ((IRQn_Type)irq);
+}
+
+void noTone(uint8_t pin) {
+  uint8_t timer_num = BEEPER_TIMER_NUM;
+  
+  Tc *tc = TimerConfig [timer_num].pTimerRegs;
+  uint32_t channel = TimerConfig [timer_num].channel;
+
+  TC_Stop(tc, channel); 
+  digitalWriteDirect(pin, LOW);
+}
+
+
+// IRQ handler for tone generator
+HAL_BEEPER_TIMER_ISR {
+    static bool toggle;
+
+    HAL_timer_isr_status (BEEPER_TIMER_COUNTER, BEEPER_TIMER_CHANNEL);
+    digitalWriteDirect(tone_pin, toggle);
+    toggle = !toggle;
 }
 
 // --------------------------------------------------------------------------
 //
 // --------------------------------------------------------------------------
+
+uint16_t getAdcReading(adc_channel_num_t chan)
+{
+  uint16_t rslt = (uint16_t) adc_get_channel_value(ADC, chan);
+  adc_disable_channel(ADC, chan);
+  return rslt;
+}
+
+void startAdcConversion(adc_channel_num_t chan)
+{
+  adc_enable_channel(ADC, chan);
+  adc_start(ADC );
+}
+
+// Convert an Arduino Due pin number to the corresponding ADC channel number
+adc_channel_num_t pinToAdcChannel(int pin)
+{
+  if (pin < A0)
+  {
+    pin += A0;
+  }
+  return (adc_channel_num_t) (int) g_APinDescription[pin].ulADCChannelNumber;
+}
 
 // --------------------------------------------------------------------------
 //! @brief

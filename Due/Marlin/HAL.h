@@ -34,12 +34,14 @@
 #include <stdint.h>
 
 #include "Arduino.h"
+#include "fastio.h"
 
 // --------------------------------------------------------------------------
 // Defines
 // --------------------------------------------------------------------------
 
 #define analogInputToDigitalPin(IO) IO
+#define FORCE_INLINE __attribute__((always_inline)) inline
 
 #define     CRITICAL_SECTION_START	uint32_t primask=__get_PRIMASK(); __disable_irq();
 #define     CRITICAL_SECTION_END    if (primask==0) __enable_irq();
@@ -59,6 +61,7 @@
 
 // reset reason set by bootloader
 extern uint8_t MCUSR;
+volatile static uint32_t debug_counter;
 
 // --------------------------------------------------------------------------
 // Public functions
@@ -70,7 +73,19 @@ void cli(void);
 // Enable interrupts
 void sei(void);
 
-void _delay_ms(int delay);
+static inline void _delay_ms(uint32_t msec) {
+	delay(msec);
+}
+
+static inline void _delay_us(uint32_t usec) {
+  uint32_t n = usec * (F_CPU / 3000000);
+  asm volatile(
+      "L2_%=_delayMicroseconds:"       "\n\t"
+      "subs   %0, #1"                 "\n\t"
+      "bge    L2_%=_delayMicroseconds" "\n"
+      : "+r" (n) :  
+  );
+}
 
 int freeMemory(void);
 
@@ -81,29 +96,63 @@ unsigned char eeprom_read_byte(unsigned char *pos);
 
 
 // timers
-#define STEP_TIMER_NUM 3
-#define TEMP_TIMER_NUM 4
+#define STEP_TIMER_NUM 2
+#define STEP_TIMER_COUNTER TC0
+#define STEP_TIMER_CHANNEL 2
+#define STEP_TIMER_IRQN TC2_IRQn
+#define HAL_STEP_TIMER_ISR 	void TC2_Handler()
 
-#define HAL_TIMER_RATE 		     (F_CPU/32.0)
+#define TEMP_TIMER_NUM 3
+#define TEMP_TIMER_COUNTER TC1
+#define TEMP_TIMER_CHANNEL 0
+#define TEMP_FREQUENCY 2000
+
+#define TEMP_TIMER_IRQN TC3_IRQn
+#define HAL_TEMP_TIMER_ISR 	void TC3_Handler()
+
+#define BEEPER_TIMER_NUM 4
+#define BEEPER_TIMER_COUNTER TC1
+#define BEEPER_TIMER_CHANNEL 1
+#define BEEPER_TIMER_IRQN TC4_IRQn
+#define HAL_BEEPER_TIMER_ISR  void TC4_Handler()
+
+#define HAL_TIMER_RATE 		     (F_CPU/2)
 #define TICKS_PER_NANOSECOND   (HAL_TIMER_RATE)/1000
 
 #define ENABLE_STEPPER_DRIVER_INTERRUPT()	HAL_timer_enable_interrupt (STEP_TIMER_NUM)
 #define DISABLE_STEPPER_DRIVER_INTERRUPT()	HAL_timer_disable_interrupt (STEP_TIMER_NUM)
 
 //
-#define HAL_STEP_TIMER_ISR 	void TC3_Handler()
-#define HAL_TEMP_TIMER_ISR 	void TC4_Handler()
 
-void HAL_timer_start (uint8_t timer_num, uint32_t frequency);
-void HAL_timer_set_count (uint8_t timer_num, uint32_t count);
+void HAL_step_timer_start(void);
+void HAL_temp_timer_start (uint8_t timer_num);
 
 void HAL_timer_enable_interrupt (uint8_t timer_num);
 void HAL_timer_disable_interrupt (uint8_t timer_num);
 
-void HAL_timer_isr_prologue (uint8_t timer_num);
+FORCE_INLINE
+void HAL_timer_set_count (Tc* tc, uint32_t channel, uint32_t count) {
+
+  uint32_t counter_value = tc->TC_CHANNEL[channel].TC_CV + 42;
+  if(count < 210) count = 210;
+  tc->TC_CHANNEL[channel].TC_RC = (counter_value <= count) ? count : counter_value;
+}
+
+FORCE_INLINE
+void HAL_timer_isr_status (Tc* tc, uint32_t channel) {
+  tc->TC_CHANNEL[channel].TC_SR; // clear status register
+}
+
+int HAL_timer_get_count (uint8_t timer_num);
 //
 
+void tone(uint8_t pin, int frequency);
+void noTone(uint8_t pin);
+//void tone(uint8_t pin, int frequency, long duration);
 
+uint16_t getAdcReading(adc_channel_num_t chan);
+void startAdcConversion(adc_channel_num_t chan);
+adc_channel_num_t pinToAdcChannel(int pin);
 
 // --------------------------------------------------------------------------
 //

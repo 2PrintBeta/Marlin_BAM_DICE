@@ -365,16 +365,16 @@ void handle_cmd()
 			switch(axis)
 			{
 				case 0:
-					enquecommand_P(PSTR("G28"));
+					enqueuecommands_P(PSTR("G28"));
 					break;
 				case 1:
-					enquecommand_P(PSTR("G28 X"));
+					enqueuecommands_P(PSTR("G28 X"));
 					break;
 				case 2:
-					enquecommand_P(PSTR("G28 Y"));
+					enqueuecommands_P(PSTR("G28 Y"));
 					break;
 				case 3:
-					enquecommand_P(PSTR("G28 Z"));
+					enqueuecommands_P(PSTR("G28 Z"));
 					break;
 			}
 			//send answer
@@ -393,8 +393,8 @@ void handle_cmd()
 			char* c;
 			sprintf_P(cmd, PSTR("M23 %s"), filename);
 			for(c = &cmd[4]; *c; c++)  *c = tolower(*c);
-			enquecommand(cmd);
-			enquecommand_P(PSTR("M24"));
+			enqueuecommand(cmd);
+			enqueuecommands_P(PSTR("M24"));
 			
 			//send answer
 			esp_send_2(true,"");
@@ -423,12 +423,12 @@ void handle_cmd()
     
 			if(SD_FINISHED_STEPPERRELEASE)
 			{
-				enquecommand_P(PSTR(SD_FINISHED_RELEASECOMMAND));
+				enqueuecommands_P(PSTR(SD_FINISHED_RELEASECOMMAND));
 			}	
 			autotempShutdown();
     
 			cancel_heatup = true;
-			starttime=0;
+			print_job_start_ms=0;
 			//send answer
 			esp_send_2(true,"");
 			break;
@@ -527,7 +527,7 @@ void handle_cmd()
 		case eGcode:
 		{
 			esp_cmd.data[esp_cmd.length] =0;
-			enquecommand((char*)esp_cmd.data);
+			enqueuecommand((char*)esp_cmd.data);
 			esp_send_2(true,"");
 			break;
 		}
@@ -668,7 +668,7 @@ void esp_send_state()
 	if (card.sdprinting) state->percentage =card.percentDone();
 	else state->percentage = 255;
 	//print time
-	if(starttime != 0) state->printtime = millis() - starttime;
+	if(print_job_start_ms != 0) state->printtime = millis() - print_job_start_ms;
 	else state->printtime =0;
 	//sd card inserted
 	state->sdPlugged = card.cardOK;
@@ -891,9 +891,9 @@ void ESP8266_move(double x, double y, double z, double e,int f)
     }
 	#ifdef DELTA
     calculate_delta(current_position);
-    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS],f*feedmultiply/60/100.0, active_extruder);
+    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS],f*feedrate_multiplier/60/100.0, active_extruder);
     #else
-    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], f*feedmultiply/60/100.0, active_extruder);
+    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], f*feedrate_multiplier/60/100.0, active_extruder);
     #endif
 }
 
