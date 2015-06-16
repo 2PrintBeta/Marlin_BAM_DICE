@@ -15,56 +15,32 @@ Note on this fork
 This is a fork of Marlin in order to create a version that is portable between existing AVR targets and also Arduino Due 
 compatible targets.
 
+This fork also contains code to use a ESP8266 module as Wifi interface to the CNC controller.
+
 The following shields are supported on Arduino Due:
 * RADDS
-* RAMPS-FD v1 (todo) 
+* RAMPS-FD v1 
 * RAMPS-FD v2 
 * BAM&DICE Due
 
 Current Status 
 --------------
 
-Alpha test
+Beta test on BAM&DICE DUE
 
-Very limited testing of a small subset of functions have been tested.
-Testers should watch out for anything going wrong, including unexpected head movement,
-program hanging and runaway heaters.
+Nearly everything should work as advertised. 
+Not all Hardware variations are tested. 
 
-
-- Most files have been ported
-- basic print functions and LCD have been tested
-- there are dozens of #defines that have not been tested at all
-
-All functions should work except 
-  - servos 
-	- PWM control
-	- watchdog
-	- BlinkM
-
-Tested features
----------------
-Due version
-- EEPROM read/write
-- SD card, init and list files
-- stepper movement
-- thermistor reading
-- LCD display
-- mosfet control, extruder and heatbed
-
-AVR version
-- not tested!
+If you find any errors, please write a bug report or send a patch.
 
 Tested boards
 -------------
 
 Arduino Due
-- RADDS
-- RAMPS-FD v2 
-  - with SDRAMPS (needs version with 4050 level converter, TXB0104 or similar do not work)
-	- LCD Panel adapter 
-	  - Reprap discount LCD controller
-	  - Reprap discount graphic controller
 - BAM&DICE Due
+
+Arduino Mega
+- BAM&DICE
 
 Quick Information
 ===================
