@@ -993,7 +993,7 @@ void finishAndDisableSteppers() {
 }
 
 void quickStop() {
-  cleaning_buffer_counter = 5000;
+  cleaning_buffer_counter = 32;
   DISABLE_STEPPER_DRIVER_INTERRUPT();
   while (blocks_queued()) plan_discard_current_block();
   current_block = NULL;
