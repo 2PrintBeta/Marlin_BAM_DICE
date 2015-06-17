@@ -509,16 +509,6 @@ bool enqueuecommand(const char *cmd) {
   return true;
 }
 
-//clear buffer - used when stop is pressed in the lcd_menu
-void clearbuffer()
-{
-  while(commands_in_queue > 0)
-  {
-	commands_in_queue--;
-    cmd_queue_index_r = (cmd_queue_index_r + 1) % BUFSIZE;
-  }
-}
-
 void setup_killpin() {
   #if HAS_KILL
     SET_INPUT(KILL_PIN);

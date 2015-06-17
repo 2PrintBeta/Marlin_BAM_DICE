@@ -400,7 +400,6 @@ static void lcd_sdcard_resume() { card.startFileprint(); }
 
 static void lcd_sdcard_stop() {
   quickStop();
-  clearbuffer();
     card.sdprinting = false;
     card.closefile();
     autotempShutdown();

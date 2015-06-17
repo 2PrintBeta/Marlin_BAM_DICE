@@ -220,7 +220,6 @@ void reset_bed_level();
 void prepare_move();
 void kill(const char *);
 void Stop();
-void clearbuffer();
 
 #ifdef FILAMENT_RUNOUT_SENSOR
   void filrunout();

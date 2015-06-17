@@ -416,17 +416,10 @@ void handle_cmd()
 		}
 		case eStop:
 		{
+			quickStop();
 			card.sdprinting = false;
 			card.closefile();
-			quickStop();
-			clearbuffer();
-    
-			if(SD_FINISHED_STEPPERRELEASE)
-			{
-				enqueuecommands_P(PSTR(SD_FINISHED_RELEASECOMMAND));
-			}	
 			autotempShutdown();
-    
 			cancel_heatup = true;
 			print_job_start_ms=0;
 			//send answer
