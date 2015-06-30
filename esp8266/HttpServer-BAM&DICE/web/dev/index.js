@@ -497,11 +497,12 @@
 	
 	xmlHttp.upload.onprogress = function(e) {
 		var p = Math.round(100 / e.total * e.loaded);
+		if(e.total == 0 || e.loaded == 0) p=0;
 		document.getElementById("file_progress").value = p;            
 		document.getElementById("file_prozent").innerHTML = p + "%";
 	};
+	xmlHttp.open("POST", "/upload",true);
 	
-	xmlHttp.open("POST", "/upload");
 	xmlHttp.send(formData);
   }
   function deleteFile()

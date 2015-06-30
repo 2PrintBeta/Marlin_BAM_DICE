@@ -60,6 +60,8 @@ err_t HttpServerConnection::onReceive(pbuf *buf)
 				state = eHCS_ParsePostData;
 			else if (request.getContentLength() > 0 && request.getContentType().equals(ContentType::Binary))
 				state = eHCS_ParseLongPostData;
+			else if (request.getContentLength() > 0 && request.getContentType().startsWith(ContentType::FormMultipart))
+				state = eHCS_ParseLongPostData;
 			else
 				state = eHCS_ParsingCompleted;
 		}

@@ -369,35 +369,35 @@ bool onPost(HttpRequest &request,pbuf* buf)
 	if(postState ==0)
 	{
 		//look for boundary
-		int boundaryPos = NetUtils::pbufFindStr(buf, "boundary=");
-		if (boundaryPos == -1)
+		if(boundary == "")
 		{
-			postError = "Could not find boundary";
-			//reset state
-			postDataProcessed = 0;
-			postState =0;
-			return true;
+			int boundaryPos = NetUtils::pbufFindStr(buf, "boundary=");
+			if (boundaryPos == -1)
+			{
+				postError = "Could not find boundary";
+				//reset state
+				postDataProcessed = 0;
+				postState =0;
+				boundary = "";
+				return true;
+			}
+			boundaryPos +=9; //skip unwanted parts
+			int boundaryEnd = NetUtils::pbufFindStr(buf,"\r",boundaryPos);
+			boundary = "--";
+			boundary.concat(NetUtils::pbufStrCopy(buf,boundaryPos,boundaryEnd-boundaryPos));
+			boundary.concat("--");
 		}
-		boundaryPos +=9; //skip unwanted parts
-		int boundaryEnd = NetUtils::pbufFindStr(buf,"\r",boundaryPos);
-		boundary = "--";
-		boundary.concat(NetUtils::pbufStrCopy(buf,boundaryPos,boundaryEnd-boundaryPos));
-		boundary.concat("--");
-
-		//look for header end
-		header_end= NetUtils::pbufFindStr(buf, "\r\n\r\n");
-		if (header_end == -1)
-		{
-			postError = "Could not find header";
-			//reset state
-			postDataProcessed = 0;
-			postState =0;
-			return true;
-		}
-		header_end = header_end + 4;
 
 		// look for filename
-		int namePos = NetUtils::pbufFindStr(buf, "filename=", header_end);
+		int namePos = NetUtils::pbufFindStr(buf, "filename=");
+		if(namePos == -1)
+		{
+			// filename not found, is it in other pakets ?
+			postDataProcessed--;
+			if(postDataProcessed == -3) return true;
+			return false;
+		}
+		postDataProcessed =0;
 		namePos += 10; // length of unwanted string
 		int nameEnd = NetUtils::pbufFindStr(buf,"\r",namePos);
 		String filename = NetUtils::pbufStrCopy(buf,namePos,nameEnd-namePos-1);
@@ -416,6 +416,7 @@ bool onPost(HttpRequest &request,pbuf* buf)
 			postDataProcessed = 0;
 			postState =0;
 			uploadInProgress = false;
+			boundary ="";
 			return true;
 		}
 
@@ -445,15 +446,16 @@ bool onPost(HttpRequest &request,pbuf* buf)
 			postDataProcessed = 0;
 			postState =0;
 			uploadInProgress = false;
+			boundary = "";
 			return true;
 		}
 		start +=test.length();
 	}
 
 	// add data length
-	postDataProcessed += buf->tot_len - header_end;
+	//postDataProcessed += buf->tot_len - header_end;
 	//check if we got all data
-	if (postDataProcessed == request.getContentLength())
+	if (boundaryPos != -1)
 	{
 		unsigned char data;
 		sendActiveCmd(eCloseFile,0,&data);
@@ -464,6 +466,7 @@ bool onPost(HttpRequest &request,pbuf* buf)
 			postDataProcessed = 0;
 			postState =0;
 			uploadInProgress = false;
+			boundary = "";
 			return true;
 		}
 
@@ -472,6 +475,7 @@ bool onPost(HttpRequest &request,pbuf* buf)
 		postState =0;
 		postError = "";
 		uploadInProgress = false;
+		boundary = "";
 		return true;
 	}
 	else
