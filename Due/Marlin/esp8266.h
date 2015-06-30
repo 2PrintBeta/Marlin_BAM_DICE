@@ -39,6 +39,8 @@ char* esp8266_mode();
 //tries to load config from sd card
 void esp8266_load_cfg();
 
+void esp8266_enter_program_mode();
+void esp8266_leave_program_mode();
 
 #endif
 

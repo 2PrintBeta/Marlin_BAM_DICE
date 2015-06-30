@@ -222,6 +222,9 @@
  * ************ Custom codes - This can change to suit future G-code regulations
  * M851 - Set probe's Z offset (mm above extruder -- The value will always be negative)
 
+ * M880 - Output wifi configuration
+ * M881 - try to load a wifi config
+ * M882 - enter esp programming mode - can only be left by reset
 
  * M928 - Start SD logging (M928 filename.g) - ended by M29
  * M999 - Restart after being stopped by error
@@ -5775,7 +5778,8 @@ void process_next_command() {
           gcode_M605();
           break;
       #endif // DUAL_X_CARRIAGE
-	   case 880:  //get network state
+       #ifdef HAVE_ESP8266
+	 case 880:  //get network state
 	  {
 		SERIAL_ECHO_START;
 		SERIAL_ECHO("IP: ");
@@ -5791,6 +5795,11 @@ void process_next_command() {
 		esp8266_load_cfg();
 		break;
 	  }
+          case 882:  //set esp to programming mode, and relay all serial comm between those two. You can only leave this mode by reset
+          {
+             esp8266_enter_program_mode();
+          }
+      #endif
       case 907: // M907 Set digital trimpot motor current using axis codes.
         gcode_M907();
         break;

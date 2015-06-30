@@ -151,32 +151,73 @@ void wifi_write(const uint8_t c);
 
 void init_esp8266()
 {
-	// inti variables
-	comm_state = eIdle;
-	strcpy(address,"NONE");
-	strcpy(mode,"MODE: ");
-	strcpy(ssid,"SSID: ");
+  // init variables
+  comm_state = eIdle;
+  strcpy(address,"NONE");
+  strcpy(mode,"MODE: ");
+  strcpy(ssid,"SSID: ");
 
-	//setup pins, reset esp
-	pinMode(ESP_RESET_PIN,OUTPUT);
-	pinMode(ESP_CH_DOWN_PIN,OUTPUT);
-	pinMode(ESP_PROG_PIN,OUTPUT);
+  //setup pins, reset esp
+  pinMode(ESP_RESET_PIN,OUTPUT);
+  pinMode(ESP_CH_DOWN_PIN,OUTPUT);
+  pinMode(ESP_PROG_PIN,OUTPUT);
 	
-	digitalWrite(ESP_RESET_PIN,HIGH);
-	digitalWrite(ESP_CH_DOWN_PIN,HIGH);
-	digitalWrite(ESP_PROG_PIN,HIGH);
+  digitalWrite(ESP_RESET_PIN,HIGH);
+  digitalWrite(ESP_CH_DOWN_PIN,HIGH);
+  digitalWrite(ESP_PROG_PIN,HIGH);
 	
-	//reset esp
-    digitalWrite(ESP_RESET_PIN,LOW);
-    delay(100);
-    digitalWrite(ESP_RESET_PIN,HIGH);
+  //reset esp
+  digitalWrite(ESP_RESET_PIN,LOW);
+  delay(100);
+  digitalWrite(ESP_RESET_PIN,HIGH);
 	
-	// init wifi 
-	wifi.begin(WIFI_BAUDRATE);
-	wifi.setTimeout(TIMEOUT);
+  // init wifi 
+  wifi.begin(WIFI_BAUDRATE);
+  wifi.setTimeout(TIMEOUT);
 		
-	// clear data
-	while(wifi.available()) wifi.read();
+  // clear data
+  while(wifi.available()) wifi.read();
+}
+
+void esp8266_enter_program_mode()
+{
+  //stop wifi serial
+  wifi.end();
+  
+  //set program pin
+  digitalWrite(ESP_PROG_PIN,LOW);
+  
+   //set wifi serial to standard baudrate
+  wifi.begin(BAUDRATE);
+  
+  //reset esp
+  digitalWrite(ESP_RESET_PIN,LOW);
+  delay(100);
+  digitalWrite(ESP_RESET_PIN,HIGH);
+  
+
+  
+  //relay all serial data between the two serial ports
+  // you can only leave this by reset
+  while(1)
+  {
+      if(wifi.available())
+      {
+         MYSERIAL.write(wifi.read());
+      }
+      if(MYSERIAL.available())
+      {
+         wifi_write(MYSERIAL.read());
+      }
+  }
+ 
+}
+
+
+void esp8266_leave_program_mode()
+{
+  wifi.end();
+  init_esp8266();
 }
 
 char* esp8266_ip()
