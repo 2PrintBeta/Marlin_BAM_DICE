@@ -342,7 +342,7 @@
 		temp3Target_changed=false;
 	}
 	url = url+value;
-
+	
 	xmlHttp = new XMLHttpRequest();
 	xmlHttp.onreadystatechange = processRequest;
 	xmlHttp.open("GET", url, true);

@@ -201,6 +201,7 @@ void onGet(HttpRequest &request, HttpResponse &response)
 		json["message"] = "Unknown Request";
 	}
 
+	response.setCache(0, true);
 	response.sendJsonObject(stream);
 }
 
@@ -322,6 +323,7 @@ void onSet(HttpRequest &request, HttpResponse &response)
 		json["message"] = "Unknown request";
 	}
 
+	response.setCache(0, true);
 	response.sendJsonObject(stream);
 }
 
@@ -358,6 +360,7 @@ void onUpload(HttpRequest &request, HttpResponse &response)
 		json["error"] = "1";
 		json["message"] = "Unknown Request";
 	}
+	response.setCache(0, true);
 	response.sendJsonObject(stream);
 }
 
@@ -521,6 +524,7 @@ void onSetInternal(HttpRequest &request, HttpResponse &response)
 		json["error"] = "1";
 		json["message"] = "Unknown Request";
 	}
+	response.setCache(0, true);
 	response.sendJsonObject(stream);
 }
 
