@@ -421,6 +421,13 @@
 #define MSG_END_MINUTE                      "minutes"
 #endif
 
+#ifndef MSG_XSCALE
+#define MSG_XSCALE                      "X scale"
+#endif
+#ifndef MSG_YSCALE
+#define MSG_YSCALE                      "Y scale"
+#endif
+
 #ifdef DELTA_CALIBRATION_MENU
   #ifndef MSG_DELTA_CALIBRATE
   #define MSG_DELTA_CALIBRATE             "Delta Calibration"
