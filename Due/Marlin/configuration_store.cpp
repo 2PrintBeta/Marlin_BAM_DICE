@@ -46,6 +46,7 @@
  *  M665 R    delta_radius
  *  M665 L    delta_diagonal_rod
  *  M665 S    delta_segments_per_second
+ *  M667      tower_adj and more
  *
  * ULTIPANEL:
  *  M145 S0 H plaPreheatHotendTemp
@@ -179,9 +180,11 @@ void Config_StoreSettings()  {
 
   #ifdef DELTA
     EEPROM_WRITE_VAR(i, endstop_adj);               // 3 floats
+	EEPROM_WRITE_VAR(i, tower_adj);
     EEPROM_WRITE_VAR(i, delta_radius);              // 1 float
     EEPROM_WRITE_VAR(i, delta_diagonal_rod);        // 1 float
     EEPROM_WRITE_VAR(i, delta_segments_per_second); // 1 float
+	EEPROM_WRITE_VAR(i, max_pos);
   #elif defined(Z_DUAL_ENDSTOPS)
     EEPROM_WRITE_VAR(i, z_endstop_adj);            // 1 floats
     dummy = 0.0f;
@@ -350,6 +353,11 @@ void Config_RetrieveSettings() {
       EEPROM_READ_VAR(i, delta_radius);               // 1 float
       EEPROM_READ_VAR(i, delta_diagonal_rod);         // 1 float
       EEPROM_READ_VAR(i, delta_segments_per_second);  // 1 float
+	  EEPROM_READ_VAR(i, max_pos);
+      EEPROM_READ_VAR(i, tower_adj);
+	  // Update delta constants for updated delta_radius & tower_adj values
+      recalc_delta_settings(delta_radius, delta_diagonal_rod);
+	  
     #elif defined(Z_DUAL_ENDSTOPS)
       EEPROM_READ_VAR(i, z_endstop_adj);
       dummy = 0.0f;
@@ -505,7 +513,9 @@ void Config_ResetDefault() {
 
   #ifdef DELTA
     endstop_adj[X_AXIS] = endstop_adj[Y_AXIS] = endstop_adj[Z_AXIS] = 0;
-    delta_radius =  DELTA_RADIUS;
+	tower_adj[0] = tower_adj[1] = tower_adj[2] = tower_adj[3] = tower_adj[4] = tower_adj[5] = 0;
+     max_pos[2] = MANUAL_Z_HOME_POS;
+	delta_radius =  DELTA_RADIUS;
     delta_diagonal_rod =  DELTA_DIAGONAL_ROD;
     delta_segments_per_second =  DELTA_SEGMENTS_PER_SECOND;
     recalc_delta_settings(delta_radius, delta_diagonal_rod);
@@ -709,6 +719,28 @@ void Config_PrintSettings(bool forReplay) {
     SERIAL_ECHOPAIR(" R", delta_radius);
     SERIAL_ECHOPAIR(" S", delta_segments_per_second);
     SERIAL_EOL;
+	SERIAL_ECHO_START;
+    SERIAL_ECHOLNPGM("Endstop adjustment (mm):");
+    SERIAL_ECHO_START;
+    SERIAL_ECHOPAIR("  M667 X",endstop_adj[0]);
+    SERIAL_ECHOPAIR(" Y" ,endstop_adj[1]);
+    SERIAL_ECHOPAIR(" Z" ,endstop_adj[2]);
+    SERIAL_ECHOLN("");
+    SERIAL_ECHO_START;
+    SERIAL_ECHOLNPGM("Delta Geometry adjustment:");
+    SERIAL_ECHO_START;
+    SERIAL_ECHOPAIR("  M667 A",tower_adj[0]);
+    SERIAL_ECHOPAIR(" B" ,tower_adj[1]);
+    SERIAL_ECHOPAIR(" C" ,tower_adj[2]);
+    SERIAL_ECHOPAIR(" E" ,tower_adj[3]);
+    SERIAL_ECHOPAIR(" F" ,tower_adj[4]);
+    SERIAL_ECHOPAIR(" G" ,tower_adj[5]);
+    SERIAL_ECHOPAIR(" R" ,delta_radius);
+    SERIAL_ECHOPAIR(" D" ,delta_diagonal_rod);
+    SERIAL_ECHOPAIR(" H" ,max_pos[2]);
+    SERIAL_ECHOLN("");
+	
+	
   #elif defined(Z_DUAL_ENDSTOPS)
     CONFIG_ECHO_START;
     if (!forReplay) {

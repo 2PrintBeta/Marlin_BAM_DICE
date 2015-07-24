@@ -204,6 +204,7 @@
  * M600 - Pause for filament change X[pos] Y[pos] Z[relative lift] E[initial retract] L[later retract distance for removal]
  * M665 - Set delta configurations: L<diagonal rod> R<delta radius> S<segments/s>
  * M666 - Set delta endstop adjustment
+ * M667 - Delta configuration options
  * M605 - Set dual x-carriage movement mode: S<mode> [ X<duplication x-offset> R<duplication temp offset> ]
  * M907 - Set digital trimpot motor current using axis codes.
  * M908 - Control digital trimpot directly.
@@ -360,6 +361,7 @@ bool homing_in_progress = false;
   #define SIN_60 0.8660254037844386
   #define COS_60 0.5
   float endstop_adj[3] = { 0 };
+  float tower_adj[6]={-0.2,-0.15,0.1,0,0,0};
   // these are the default values, can be overriden with M665
   float delta_radius = DELTA_RADIUS;
   float delta_tower1_x = -SIN_60 * delta_radius; // front left tower
@@ -972,9 +974,13 @@ static inline type array(int axis)          \
     { return pgm_read_any(&array##_P[axis]); }
 
 XYZ_CONSTS_FROM_CONFIG(float, base_min_pos,    MIN_POS);
-XYZ_CONSTS_FROM_CONFIG(float, base_max_pos,    MAX_POS);
-XYZ_CONSTS_FROM_CONFIG(float, base_home_pos,   HOME_POS);
-XYZ_CONSTS_FROM_CONFIG(float, max_length,      MAX_LENGTH);
+//XYZ_CONSTS_FROM_CONFIG(float, base_max_pos,    MAX_POS);
+//XYZ_CONSTS_FROM_CONFIG(float, base_home_pos,   HOME_POS);
+//XYZ_CONSTS_FROM_CONFIG(float, max_length,      MAX_LENGTH);
+//values are configurable ?
+float base_max_pos[3] = {X_MAX_POS, Y_MAX_POS, Z_MAX_POS};
+float base_home_pos[3] = {X_HOME_POS, Y_HOME_POS, Z_HOME_POS};
+float max_length[3] = {X_MAX_LENGTH, Y_MAX_LENGTH, Z_MAX_LENGTH};
 XYZ_CONSTS_FROM_CONFIG(float, home_bump_mm,   HOME_BUMP_MM);
 XYZ_CONSTS_FROM_CONFIG(signed char, home_dir,  HOME_DIR);
 
@@ -988,7 +994,7 @@ XYZ_CONSTS_FROM_CONFIG(signed char, home_dir,  HOME_DIR);
 
   static float x_home_pos(int extruder) {
   if (extruder == 0)
-      return base_home_pos(X_AXIS) + home_offset[X_AXIS];
+      return base_home_pos[X_AXIS] + home_offset[X_AXIS];
   else
     // In dual carriage mode the extruder offset provides an override of the
     // second X-carriage offset when homed - otherwise X2_HOME_POS is used.
@@ -1023,9 +1029,9 @@ static void axis_is_at_home(AxisEnum axis) {
     }
       else if (dual_x_carriage_mode == DXC_DUPLICATION_MODE) {
         float xoff = home_offset[X_AXIS];
-        current_position[X_AXIS] = base_home_pos(X_AXIS) + xoff;
+        current_position[X_AXIS] = base_home_pos[X_AXIS] + xoff;
                  min_pos[X_AXIS] = base_min_pos(X_AXIS) + xoff;
-                 max_pos[X_AXIS] = min(base_max_pos(X_AXIS) + xoff, max(extruder_offset[X_AXIS][1], X2_MAX_POS) - duplicate_extruder_x_offset);
+                 max_pos[X_AXIS] = min(base_max_pos[X_AXIS] + xoff, max(extruder_offset[X_AXIS][1], X2_MAX_POS) - duplicate_extruder_x_offset);
       return;
     }
   }
@@ -1036,7 +1042,7 @@ static void axis_is_at_home(AxisEnum axis) {
     if (axis == X_AXIS || axis == Y_AXIS) {
 
       float homeposition[3];
-      for (int i = 0; i < 3; i++) homeposition[i] = base_home_pos(i);
+      for (int i = 0; i < 3; i++) homeposition[i] = base_home_pos[i];
 
       // SERIAL_ECHOPGM("homeposition[x]= "); SERIAL_ECHO(homeposition[0]);
       // SERIAL_ECHOPGM("homeposition[y]= "); SERIAL_ECHOLN(homeposition[1]);
@@ -1064,14 +1070,14 @@ static void axis_is_at_home(AxisEnum axis) {
       // SCARA home positions are based on configuration since the actual limits are determined by the 
       // inverse kinematic transform.
       min_pos[axis] = base_min_pos(axis); // + (delta[axis] - base_home_pos(axis));
-      max_pos[axis] = base_max_pos(axis); // + (delta[axis] - base_home_pos(axis));
+      max_pos[axis] = base_max_pos[axis]; // + (delta[axis] - base_home_pos(axis));
     }
     else
   #endif
   {
-    current_position[axis] = base_home_pos(axis) + home_offset[axis];
+    current_position[axis] = base_home_pos[axis] + home_offset[axis];
     min_pos[axis] = base_min_pos(axis) + home_offset[axis];
-    max_pos[axis] = base_max_pos(axis) + home_offset[axis];
+    max_pos[axis] = base_max_pos[axis] + home_offset[axis];
 
     #if defined(ENABLE_AUTO_BED_LEVELING) && Z_HOME_DIR < 0
       if (axis == Z_AXIS) current_position[Z_AXIS] -= zprobe_zoffset;
@@ -1684,7 +1690,7 @@ static void homeaxis(AxisEnum axis) {
     #endif
 
     // Move towards the endstop until an endstop is triggered
-    destination[axis] = 1.5 * max_length(axis) * axis_home_dir;
+    destination[axis] = 1.5 * max_length[axis] * axis_home_dir;
     feedrate = homing_feedrate[axis];
     line_to_destination();
     st_synchronize();
@@ -2198,7 +2204,7 @@ inline void gcode_G28() {
 
         sync_plan_position();
 
-        float mlx = max_length(X_AXIS), mly = max_length(Y_AXIS),
+        float mlx = max_length[X_AXIS], mly = max_length[Y_AXIS],
               mlratio = mlx>mly ? mly/mlx : mlx/mly;
 
         destination[X_AXIS] = 1.5 * mlx * x_axis_home_dir;
@@ -4164,6 +4170,95 @@ inline void gcode_M206() {
       }
     }
   }
+  
+  inline void gcode_M667()
+  {
+	//endstop_adj
+    for(int8_t i=0; i < 3; i++)
+    {
+       if (code_seen(axis_codes[i])) endstop_adj[i] = code_value();
+    }
+	
+	//tower_adj
+	if (code_seen('A')) 
+	{
+		tower_adj[0] = code_value();
+		recalc_delta_settings(delta_radius, delta_diagonal_rod);
+	}
+	if (code_seen('B')) 
+	{
+		tower_adj[1] = code_value();
+		 recalc_delta_settings(delta_radius, delta_diagonal_rod);
+	}
+	if (code_seen('C')) 
+	{
+		tower_adj[2] = code_value();
+		recalc_delta_settings(delta_radius, delta_diagonal_rod);
+	}
+    if (code_seen('I')) 
+	{
+		tower_adj[3] = code_value();
+		recalc_delta_settings(delta_radius, delta_diagonal_rod);
+	}
+	if (code_seen('J')) 
+	{
+		tower_adj[4] = code_value();
+		recalc_delta_settings(delta_radius, delta_diagonal_rod);
+	}
+	if (code_seen('K')) 
+	{
+		tower_adj[5] = code_value();
+		recalc_delta_settings(delta_radius, delta_diagonal_rod);
+	}
+	//delta radius
+    if (code_seen('R'))
+	{
+        delta_radius = code_value();
+        recalc_delta_settings(delta_radius, delta_diagonal_rod);
+    }
+	//delta diagnonal
+    if (code_seen('D')) 
+	{
+        delta_diagonal_rod = code_value();
+        recalc_delta_settings(delta_radius, delta_diagonal_rod);
+    }
+	//max height
+    if (code_seen('H')) 
+	{
+        max_pos[Z_AXIS]= code_value();
+	    recalc_delta_settings(delta_radius, delta_diagonal_rod);
+    }
+	//list values
+	if (code_seen('L')) 
+	{
+	    SERIAL_ECHOLN("Current Delta geometry values:");
+	    SERIAL_ECHOPAIR("X (Endstop Adj): ",endstop_adj[0]);
+        SERIAL_ECHOLN("");
+	    SERIAL_ECHOPAIR("Y (Endstop Adj): ",endstop_adj[1]);
+        SERIAL_ECHOLN("");
+	    SERIAL_ECHOPAIR("Z (Endstop Adj): ",endstop_adj[2]);
+        SERIAL_ECHOLN("");
+        SERIAL_ECHOPAIR("A (Tower A Position Correction): ",tower_adj[0]);
+        SERIAL_ECHOLN("");
+        SERIAL_ECHOPAIR("B (Tower B Position Correction): ",tower_adj[1]);
+        SERIAL_ECHOLN("");
+        SERIAL_ECHOPAIR("C (Tower C Position Correction): ",tower_adj[2]);
+	    SERIAL_ECHOLN("");
+        SERIAL_ECHOPAIR("I (Tower A Radius Correction): ",tower_adj[3]);
+        SERIAL_ECHOLN("");
+        SERIAL_ECHOPAIR("J (Tower B Radius Correction): ",tower_adj[4]);
+        SERIAL_ECHOLN("");
+        SERIAL_ECHOPAIR("K (Tower C Radius Correction): ",tower_adj[5]);
+	    SERIAL_ECHOLN("");
+        SERIAL_ECHOPAIR("R (Delta Radius): ",delta_radius);
+        SERIAL_ECHOLN("");
+        SERIAL_ECHOPAIR("D (Diagonal Rod Length): ",delta_diagonal_rod);
+	    SERIAL_ECHOLN("");
+        SERIAL_ECHOPAIR("H (Z-Height): ",max_pos[Z_AXIS]);
+        SERIAL_ECHOLN("");
+    }  
+  }
+  
 #elif defined(Z_DUAL_ENDSTOPS) // !DELTA && defined(Z_DUAL_ENDSTOPS)
   /**
    * M666: For Z Dual Endstop setup, set z axis offset to the z2 axis.
@@ -4810,7 +4905,7 @@ inline void gcode_M428() {
   memcpy(new_offs, home_offset, sizeof(new_offs));
   for (int8_t i = X_AXIS; i <= Z_AXIS; i++) {
     if (axis_known_position[i]) {
-      float base = (new_pos[i] > (min_pos[i] + max_pos[i]) / 2) ? base_home_pos(i) : 0,
+      float base = (new_pos[i] > (min_pos[i] + max_pos[i]) / 2) ? base_home_pos[i] : 0,
             diff = new_pos[i] - base;
       if (diff > -20 && diff < 20) {
         new_offs[i] -= diff;
@@ -5600,6 +5695,12 @@ void process_next_command() {
           break;
       #endif
 
+	  #ifdef DELTA
+		case 667:
+		gcode_M667();
+		break;
+	  #endif
+	  
       #ifdef FWRETRACT
         case 207: //M207 - set retract length S[positive mm] F[feedrate mm/min] Z[additional zlift/hop]
           gcode_M207();
@@ -5887,14 +5988,31 @@ void clamp_to_software_endstops(float target[3]) {
 
 #ifdef DELTA
 
-  void recalc_delta_settings(float radius, float diagonal_rod) {
-    delta_tower1_x = -SIN_60 * radius;  // front left tower
+  void recalc_delta_settings(float radius, float diagonal_rod) 
+  {
+	max_length[Z_AXIS] = max_pos[Z_AXIS] - Z_MIN_POS;
+	base_max_pos[Z_AXIS]  = max_pos[Z_AXIS];
+	base_home_pos[Z_AXIS] = max_pos[Z_AXIS];
+  
+	delta_diagonal_rod_2 = pow(diagonal_rod,2);
+  
+	delta_tower1_x = (radius + tower_adj[3]) * cos((210 + tower_adj[0]) * PI/180); // front left tower
+	delta_tower1_y = (radius + tower_adj[3]) * sin((210 + tower_adj[0]) * PI/180); 
+	delta_tower2_x = (radius + tower_adj[4]) * cos((330 + tower_adj[1]) * PI/180); // front right tower
+	delta_tower2_y = (radius + tower_adj[4]) * sin((330 + tower_adj[1]) * PI/180); 
+	delta_tower3_x = (radius + tower_adj[5]) * cos((90 + tower_adj[2]) * PI/180);  // back middle tower
+	delta_tower3_y = (radius + tower_adj[5]) * sin((90 + tower_adj[2]) * PI/180);  
+  
+/*  
+     delta_tower1_x = -SIN_60 * radius;  // front left tower
     delta_tower1_y = -COS_60 * radius;
     delta_tower2_x =  SIN_60 * radius;  // front right tower
     delta_tower2_y = -COS_60 * radius;
     delta_tower3_x = 0.0;               // back middle tower
     delta_tower3_y = radius;
     delta_diagonal_rod_2 = sq(diagonal_rod);
+	
+	*/
   }
 
   void calculate_delta(float cartesian[3]) {

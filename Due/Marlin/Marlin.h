@@ -275,6 +275,7 @@ extern bool homing_in_progress;
   extern float delta_radius;
   extern float delta_diagonal_rod;
   extern float delta_segments_per_second;
+  extern float tower_adj[6];
   void recalc_delta_settings(float radius, float diagonal_rod);
 #elif defined(Z_DUAL_ENDSTOPS)
   extern float z_endstop_adj;
