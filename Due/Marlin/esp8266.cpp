@@ -351,8 +351,8 @@ void handle_cmd()
 			#if EXTRUDERS > 1
 			else if(heater == 2)
 			{
-				if(temp > HEATER_1_MAXTEMP - 15) temp =  HEATER_1_MAXTEMP - 15;
-				target_temperature[1] = dtemp;
+				if(temp > HEATER_0_MAXTEMP - 15) temp =  HEATER_0_MAXTEMP - 15;
+				target_temperature[1] = temp;
 			}
 			#endif
 			else if(heater == 3)
