@@ -1435,7 +1435,7 @@ HAL_TEMP_TIMER_ISR {
 
     case PrepareTemp_1:
       #if HAS_TEMP_1
-        START_TEMP(1)
+        START_TEMP(1);
       #endif
       lcd_buttons_update();
       temp_state = MeasureTemp_1;

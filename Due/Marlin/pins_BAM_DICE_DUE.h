@@ -41,7 +41,7 @@
 
 #define BEEPER             -1
 
-#define FAN_PIN            9
+#define FAN_PIN            9  // set this to 4 if you have two extruders
 
 #define CONTROLLERFAN_PIN  -1 //Pin used for the fan to cool controller
 
@@ -58,7 +58,7 @@
 #define TEMP_BED_PIN       10   // ANALOG NUMBERING
 
 #define TEMP_0_PIN         9   // ANALOG NUMBERING
-#define TEMP_1_PIN         -1  // 11    // ANALOG NUMBERING
+#define TEMP_1_PIN         11  // -1 to disable   // ANALOG NUMBERING
 #define TEMP_2_PIN         -1  //     // ANALOG NUMBERING
 
 #define TEMP_3_PIN         -1   // ANALOG NUMBERING
