@@ -55,10 +55,10 @@
 #define HEATER_0_PIN       10
 #define HEATER_1_PIN       9
 
-#define TEMP_BED_PIN       10   // ANALOG NUMBERING
+#define TEMP_BED_PIN       11   // ANALOG NUMBERING
 
 #define TEMP_0_PIN         9   // ANALOG NUMBERING
-#define TEMP_1_PIN         11  // -1 to disable   // ANALOG NUMBERING
+#define TEMP_1_PIN         10  // -1 to disable   // ANALOG NUMBERING
 #define TEMP_2_PIN         -1  //     // ANALOG NUMBERING
 
 #define TEMP_3_PIN         -1   // ANALOG NUMBERING
